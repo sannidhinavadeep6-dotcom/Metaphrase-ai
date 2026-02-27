@@ -1,0 +1,168 @@
+/* Import Modern 2026 Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@800&display=swap');
+
+:root {
+    /* --- The Sky Blue & White Palette --- */
+    --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #ffffff 100%); 
+    --glass-white: rgba(255, 255, 255, 0.6);
+    --text-main: #0c4a6e;       /* Deep navy blue for high contrast text */
+    --text-muted: #64748b;
+    
+    /* --- Accent Colors --- */
+    --sky-blue: #0ea5e9;        /* Vibrant Sky Blue */
+    --sky-blue-hover: #0284c7;
+    --white-accent: #f8fafc;
+    
+    /* --- Neo-Brutalism Borders & Shadows --- */
+    --neo-border: 2px solid #0c4a6e;
+    --neo-shadow: 4px 4px 0px #0c4a6e;
+    --neo-shadow-hover: 2px 2px 0px #0c4a6e;
+}
+
+/* =========================================
+   1. Global App Styling (Neo-Brutalism Base) 
+========================================= */
+.stApp {
+    background: var(--bg-gradient) !important;
+    background-attachment: fixed !important;
+    font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3 {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-main) !important;
+    letter-spacing: -1px;
+}
+
+/* Remove default Streamlit padding for a cleaner look */
+.block-container {
+    padding-top: 2rem !important;
+}
+
+/* =========================================
+   2. White Glassmorphism Panels 
+========================================= */
+/* Applying White Glass to cards, text areas, and sidebars */
+.diff-card, .stTextArea textarea, [data-testid="stSidebar"] {
+    background: var(--glass-white) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: var(--neo-border) !important; /* Stark Neo-Brutalism border */
+    border-radius: 16px !important;
+    box-shadow: var(--neo-shadow) !important; /* Hard shadow */
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Hover effect: The panel "presses down" */
+.diff-card:hover, .stTextArea textarea:focus {
+    transform: translate(2px, 2px);
+    box-shadow: var(--neo-shadow-hover) !important;
+    border-color: var(--sky-blue) !important;
+}
+
+/* =========================================
+   3. Micro-Animations 
+========================================= */
+/* Animation 1: Continuous Floating for Difficulty Icons */
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+/* Animation 2: Pulsing Glow for Active Card */
+@keyframes activeGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(14, 165, 233, 0.3); border-color: var(--sky-blue); }
+    50% { box-shadow: 0 0 25px rgba(14, 165, 233, 0.7); border-color: var(--sky-blue-hover); }
+}
+
+/* Animation 3: Slide-in from bottom for panels on load */
+@keyframes panelSlideIn {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Apply Slide-in on load to main containers */
+[data-testid="stVerticalBlock"] > div {
+    animation: panelSlideIn 0.6s ease-out;
+}
+
+/* =========================================
+   4. Difficulty Card Styling (Interactions)
+========================================= */
+.diff-card {
+    padding: 30px;
+    text-align: center;
+    height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Apply float to the icon inside the card */
+.diff-card .icon { 
+    font-size: 36px; 
+    margin-bottom: 10px; 
+    animation: iconFloat 4s ease-in-out infinite;
+}
+
+.diff-card .title { font-weight: 700; font-size: 1.2rem; color: var(--text-main); }
+.diff-card .subtitle { color: var(--text-muted); font-size: 0.9rem; }
+
+/* --- ACTIVE STATE --- */
+.diff-card.active {
+    background: #ffffff !important;
+    border-color: var(--sky-blue) !important;
+    /* Apply continuous Pulsing Glow */
+    animation: activeGlow 3s ease-in-out infinite; 
+}
+
+.diff-card.active .title { color: var(--sky-blue); }
+.diff-card.active .icon { animation-play-state: paused; } /* Stop float on active */
+
+/* Hide standard Streamlit buttons overlaying cards */
+div[data-testid="stButton"] button {
+    opacity: 0;
+    position: absolute;
+    width: 100%;
+    height: 160px;
+    top: -170px;
+    z-index: 10;
+}
+
+/* =========================================
+   5. SKY BLUE Buttons (Login/Paraphrase) 
+========================================= */
+div.stButton > button[kind="primary"], div.stButton > button[type="primary"] {
+    background-color: var(--sky-blue) !important;
+    color: #ffffff !important;
+    border: var(--neo-border) !important;
+    border-radius: 12px !important;
+    height: 55px !important;
+    font-weight: 700 !important;
+    font-size: 1.1rem !important;
+    opacity: 1 !important; /* Keep visible */
+    position: static !important;
+    width: 100% !important;
+    box-shadow: 4px 4px 0px #0c4a6e !important;
+    transition: all 0.2s ease !important;
+}
+
+div.stButton > button[type="primary"]:hover {
+    background-color: var(--sky-blue-hover) !important;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #0c4a6e !important;
+}
+
+/* =========================================
+   6. HIDE STREAMLIT DEFAULT UI ELEMENTS
+========================================= */
+/* Hides the top header bar (Deploy button & Menu) */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* Hides the default "Made with Streamlit" footer at the bottom */
+footer {
+    display: none !important;
+}

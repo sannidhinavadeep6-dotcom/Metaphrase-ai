@@ -1,0 +1,27 @@
+# --- Secrets & Environment Variables ---
+# CRITICAL: Never upload your API keys to the internet!
+.env
+
+# --- Virtual Environments ---
+# Ignore the bulky folders where Python installs your libraries locally
+venv/
+env/
+.venv/
+
+# --- Python Cache ---
+# Ignore the temporary files Python creates when running your code
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- OS & System Files ---
+# Ignore hidden system files created by Mac or Windows
+.DS_Store
+Thumbs.db
+
+# --- IDEs & Editors ---
+# Ignore settings folders created by VS Code, PyCharm, etc.
+.vscode/
+.idea/
+.env
+__pycache__/
