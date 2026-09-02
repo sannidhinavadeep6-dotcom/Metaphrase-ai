@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Metaphrase AI — Precision Text Transformation",
+  "version": "3.0.0",
+  "description": "Instant text transformation, humanization, and multilingual rewriting directly inside Gmail, Google Docs, Notion, and WordPress.",
+  "permissions": [
+    "contextMenus",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Metaphrase AI Workspace"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ]
+}

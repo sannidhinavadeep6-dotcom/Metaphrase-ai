@@ -1,0 +1,16 @@
+/* Metaphrase in-page floating styles */
+.metaphrase-floating-pill {
+  position: absolute;
+  z-index: 2147483647;
+  background: #0f172a;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
