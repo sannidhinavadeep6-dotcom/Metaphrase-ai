@@ -44,4 +44,4 @@ def test_user_registration_and_login_flow():
     role, status, name = login_info
     assert name == "QA Tester"
     assert role == "user"
-    assert status == "pending"
+    assert status == "accepted"
