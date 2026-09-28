@@ -20,18 +20,19 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'pip'
+        cache-dependency-path: 'backend/requirements.txt'
 
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r backend/requirements.txt
         pip install pytest httpx
 
     - name: Run Pytest Suite
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test_dummy_key_ci' }}
       run: |
-        pytest -v tests/
+        python -m pytest -v backend/tests/
 
   test-frontend:
     name: Frontend Build & Lint Verification
@@ -72,7 +73,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./Dockerfile
+        file: ./backend/Dockerfile
         push: false
         tags: metaphrase-backend:latest
 
