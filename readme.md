@@ -1,4 +1,5 @@
 # Metaphrase AI 3.0 Enterprise — Precision Text Transformation & Multilingual Engine
+Public Link:https://metaphrase-ai.onrender.com/
 
 ## 🚀 Overview
 **Metaphrase AI 3.0 Enterprise** is a high-throughput, zero-latency text transformation and translation platform powered by **Google Gemini 3.5 Flash**, **React 19 + Vite**, and **FastAPI**. It transforms, simplifies, enriches, or translates complex documents while maintaining 100% semantic fidelity and factual accuracy.
