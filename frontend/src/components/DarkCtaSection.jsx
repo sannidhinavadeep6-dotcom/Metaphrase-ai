@@ -6,12 +6,9 @@ export default function DarkCtaSection({ onOpenAuth }) {
     <section className="py-24 bg-[#111625] text-white">
       <div className="max-w-[860px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         
-        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 text-white">
+        <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-8 text-white">
           Find the right words with Metaphrase AI
         </h2>
-        <p className="text-lg sm:text-xl text-gray-300 mb-10 max-w-2xl mx-auto">
-          Join more than 40 million people who use Metaphrase AI to transform their writing every day.
-        </p>
 
         {/* CTA Buttons Row */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
