@@ -14,7 +14,8 @@ for p in [str(ROOT_DIR), str(BASE_DIR)]:
 
 from fastapi import FastAPI, HTTPException, Depends, Header, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import docx
 
@@ -781,3 +782,25 @@ async def translate_endpoint(req: TranslateRequest):
         "target_language": req.target_language,
         "metrics": metrics
     }
+
+# ----------------- Production Frontend SPA Static Mount -----------------
+dist_candidates = [
+    ROOT_DIR / "frontend" / "dist",
+    ROOT_DIR / "dist",
+    BASE_DIR / "dist"
+]
+
+for d in dist_candidates:
+    if d.exists() and (d / "index.html").exists():
+        assets_dir = d / "assets"
+        if assets_dir.exists():
+            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="spa_assets")
+        
+        @app.get("/{full_path:path}", include_in_schema=False)
+        async def serve_spa(full_path: str):
+            target = d / full_path
+            if full_path and target.exists() and target.is_file():
+                return FileResponse(target)
+            return FileResponse(d / "index.html")
+        break
+
