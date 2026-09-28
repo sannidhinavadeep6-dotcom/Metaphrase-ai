@@ -1,6 +1,17 @@
 import io
+import os
+import sys
+from pathlib import Path
 import asyncio
 from typing import Optional, List
+
+# Ensure parent directory (for database) and backend directory (for utils) are in sys.path
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+for p in [str(ROOT_DIR), str(BASE_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from fastapi import FastAPI, HTTPException, Depends, Header, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -27,6 +38,10 @@ from utils.originality import (
     calculate_originality_score,
     generate_citations
 )
+from utils.doc_parser import parse_document_file
+from utils.grammar_checker import analyze_grammar_and_spelling
+from utils.plagiarism_checker import analyze_plagiarism
+from utils.ai_chat import chat_with_co_pilot
 
 # Initialize Database with WAL & Salted Bcrypt
 database.init_db()
@@ -121,6 +136,29 @@ class ExportDocxRequest(BaseModel):
     paraphrased_text: str
     tone: Optional[str] = "Simple"
     target_language: Optional[str] = "English"
+    email: Optional[str] = None
+
+class GrammarCheckRequest(BaseModel):
+    text: str
+    email: Optional[str] = None
+
+class PlagiarismCheckRequest(BaseModel):
+    text: str
+    email: Optional[str] = None
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    workspace_text: Optional[str] = ""
+    email: Optional[str] = None
+
+class TranslateRequest(BaseModel):
+    text: str
+    target_language: str
+    source_language: Optional[str] = "Auto-detect"
     email: Optional[str] = None
 
 # ----------------- Core Health & Info -----------------
@@ -460,7 +498,40 @@ def create_citations(req: CitationRequest):
         
     return result
 
-# ----------------- Batch Document Processing -----------------
+# ----------------- Universal Document Parser & Batch Processing -----------------
+@app.post("/api/doc/extract")
+async def extract_doc_text(
+    file: UploadFile = File(...),
+    email: Optional[str] = Form(None)
+):
+    filename = file.filename or "document.txt"
+    content = await file.read()
+    
+    if len(content) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 25MB limit.")
+        
+    try:
+        full_text, paragraphs = parse_document_file(filename, content)
+        words_count = len(full_text.split())
+        
+        if email:
+            database.log_activity(
+                email=email,
+                feature_name="Document Parser",
+                action=f"Extracted text from document ({filename})",
+                details=f"Extracted {words_count} words across {len(paragraphs)} paragraphs",
+                word_count=words_count
+            )
+            
+        return {
+            "filename": filename,
+            "text": full_text,
+            "paragraphs_count": len(paragraphs),
+            "word_count": words_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to extract document text: {e}")
+
 @app.post("/api/batch/upload")
 async def upload_batch_document(
     file: UploadFile = File(...),
@@ -472,24 +543,13 @@ async def upload_batch_document(
     filename = file.filename or "document.txt"
     content = await file.read()
     
-    paragraphs = []
-    if filename.lower().endswith(".docx"):
-        try:
-            doc = docx.Document(io.BytesIO(content))
-            paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Failed to read DOCX file: {e}")
-    else:
-        try:
-            text_content = content.decode("utf-8")
-        except UnicodeDecodeError:
-            try:
-                text_content = content.decode("latin-1")
-            except Exception as e:
-                raise HTTPException(status_code=400, detail="Unsupported text encoding.")
-        
-        raw_paras = text_content.split("\n\n")
-        paragraphs = [p.strip() for p in raw_paras if p.strip()]
+    if len(content) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 25MB limit.")
+    
+    try:
+        full_text, paragraphs = parse_document_file(filename, content)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse document: {e}")
 
     if not paragraphs:
         raise HTTPException(status_code=400, detail="No readable text content found in uploaded document.")
@@ -630,3 +690,94 @@ def export_docx(req: ExportDocxRequest):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": "attachment; filename=Metaphrase_Output.docx"}
     )
+
+# ----------------- Dedicated Grammar Check Endpoint -----------------
+@app.post("/api/grammar/check")
+async def check_grammar_endpoint(req: GrammarCheckRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty.")
+    
+    result = await asyncio.to_thread(analyze_grammar_and_spelling, req.text)
+    
+    if req.email:
+        database.log_activity(
+            email=req.email,
+            feature_name="Grammar Checker",
+            action="Analyzed grammar & spelling",
+            details=f"Score: {result.get('score', 100)}/100 | Issues: {len(result.get('issues', []))}",
+            word_count=result.get("word_count", 0)
+        )
+        
+    return result
+
+# ----------------- Dedicated Plagiarism Check Endpoint -----------------
+@app.post("/api/plagiarism/check")
+async def check_plagiarism_endpoint(req: PlagiarismCheckRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty.")
+        
+    result = await asyncio.to_thread(analyze_plagiarism, req.text)
+    
+    if req.email:
+        database.log_activity(
+            email=req.email,
+            feature_name="Plagiarism Checker",
+            action="Audited plagiarism & web similarity",
+            details=f"Originality: {result.get('originality_score', 100)}% ({result.get('verdict', '')})",
+            word_count=result.get("word_count", 0)
+        )
+        
+    return result
+
+# ----------------- Dedicated AI Chat Endpoint -----------------
+@app.post("/api/chat")
+async def chat_endpoint(req: ChatRequest):
+    if not req.messages:
+        raise HTTPException(status_code=400, detail="Messages list cannot be empty.")
+        
+    response_text = await asyncio.to_thread(
+        chat_with_co_pilot,
+        [m.dict() for m in req.messages],
+        req.workspace_text or ""
+    )
+    
+    if req.email:
+        database.log_activity(
+            email=req.email,
+            feature_name="AI Chat Co-Pilot",
+            action="Chat conversation turn",
+            details=f"User prompt: {req.messages[-1].content[:60]}...",
+            word_count=len(response_text.split())
+        )
+        
+    return {
+        "reply": response_text,
+        "role": "assistant"
+    }
+
+# ----------------- Dedicated Neural Translation Endpoint -----------------
+@app.post("/api/translate")
+async def translate_endpoint(req: TranslateRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty.")
+        
+    translated = await asyncio.to_thread(
+        generate_paraphrase,
+        req.text,
+        "Fluent",
+        f"Translate the text faithfully into {req.target_language} with high natural fluency and proper grammatical syntax.",
+        req.target_language
+    )
+    
+    if req.email:
+        database.add_history(req.email, req.text, translated, f"Translation ({req.target_language})")
+        
+    metrics = get_detailed_metrics(req.text, translated)
+    
+    return {
+        "original_text": req.text,
+        "translated_text": translated,
+        "source_language": req.source_language or "Auto-detect",
+        "target_language": req.target_language,
+        "metrics": metrics
+    }

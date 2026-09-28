@@ -1,10 +1,19 @@
 import streamlit as st
 import os
+import sys
+from pathlib import Path
 import io
 import time
 import difflib
 import pandas as pd
 from docx import Document
+
+# Ensure parent directory (for database) and backend directory (for utils/assets) are in sys.path
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+for p in [str(ROOT_DIR), str(BASE_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 from database import (
     init_db, verify_login, register_user, get_all_users,
@@ -26,7 +35,10 @@ init_db()
 
 # --- Fast CSS Injection (Zero Latency) ---
 def inject_custom_css():
-    css_candidates = ["assets/style.css", "assests/style.css"]
+    css_candidates = [
+        os.path.join(BASE_DIR, "assets", "style.css"),
+        "assets/style.css"
+    ]
     css_content = ""
     for path in css_candidates:
         if os.path.exists(path):
@@ -635,14 +647,13 @@ def render_about():
                 <div style='display: flex; align-items: center; gap: 14px; margin-bottom: 15px;'>
                     <div style='width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #38bdf8, #0284c7); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: white; box-shadow: 0 4px 14px rgba(2,132,199,0.4);'>N</div>
                     <div>
-                        <div style='font-size: 1.2rem; font-weight: 800; color: #0f172a;'>Nilesh Hake</div>
+                        <div style='font-size: 1.2rem; font-weight: 800; color: #0f172a;'>Navadeep Sannidhi</div>
                         <div style='font-size: 0.85rem; color: #64748b;'>AI Engineer & Full-Stack Developer</div>
                     </div>
                 </div>
                 <hr style='border-color: rgba(226,232,240,0.8); margin: 15px 0;'>
-                <p style='margin: 8px 0; font-size: 0.95rem; color: #334155;'>📞 <b>Phone:</b> +91 9014667048</p>
-                <p style='margin: 8px 0; font-size: 0.95rem; color: #334155;'>✉️ <b>Email:</b> nileshhake@gmail.com</p>
-                <p style='margin: 8px 0; font-size: 0.95rem; color: #334155;'>🌐 <b>Specialization:</b> Python, Deep Learning, Cloud Architecture</p>
+                <p style='margin: 8px 0; font-size: 0.95rem; color: #334155;'>✉️ <b>Email:</b> sannidhinavadeep6@gmail.com</p>
+                <p style='margin: 8px 0; font-size: 0.95rem; color: #334155;'>🌐 <b>Specialization:</b> Python, Deep Learning, Cloud Architecture, LLMs</p>
             </div>
         """, unsafe_allow_html=True)
 

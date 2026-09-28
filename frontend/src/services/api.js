@@ -216,6 +216,8 @@ export async function detectAiContent(text, email = null) {
   return handleResponse(res);
 }
 
+export const checkAiDetection = detectAiContent;
+
 /**
  * Humanize Text (drop AI markers & increase burstiness)
  */
@@ -267,7 +269,7 @@ export async function generateCitations(title, author = '', year = '', sourceUrl
 }
 
 /**
- * Upload & Process Batch Document (.docx / .txt)
+ * Upload & Process Batch Document (PDF, Word .docx/.doc, .txt, .md, .rtf, .csv, etc.)
  */
 export async function uploadBatchDocument(file, tone, customInstruction = null, targetLanguage = 'English', email = null) {
   const formData = new FormData();
@@ -278,6 +280,21 @@ export async function uploadBatchDocument(file, tone, customInstruction = null, 
   if (email) formData.append('email', email);
 
   const res = await fetch(`${API_BASE}/batch/upload`, {
+    method: 'POST',
+    body: formData
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Extract text from any document file (PDF, DOCX, DOC, TXT, MD, RTF, CSV) into editor
+ */
+export async function extractDocumentText(file, email = null) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (email) formData.append('email', email);
+
+  const res = await fetch(`${API_BASE}/doc/extract`, {
     method: 'POST',
     body: formData
   });
@@ -354,4 +371,61 @@ export async function downloadDocx(originalText, paraphrasedText, tone = 'Simple
   a.click();
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
+}
+
+/**
+ * Check Grammar and Spelling
+ */
+export async function checkGrammar(text, email = null) {
+  const res = await fetch(`${API_BASE}/grammar/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, email })
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Check Plagiarism & Web Matches
+ */
+export async function checkPlagiarism(text, email = null) {
+  const res = await fetch(`${API_BASE}/plagiarism/check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, email })
+  });
+  return handleResponse(res);
+}
+
+/**
+ * AI Chat Co-Pilot Turn
+ */
+export async function sendChatMessage(messages, workspaceText = '', email = null) {
+  const res = await fetch(`${API_BASE}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages,
+      workspace_text: workspaceText,
+      email
+    })
+  });
+  return handleResponse(res);
+}
+
+/**
+ * Direct Neural Translation
+ */
+export async function translateDirect(text, targetLanguage, sourceLanguage = 'Auto-detect', email = null) {
+  const res = await fetch(`${API_BASE}/translate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      target_language: targetLanguage,
+      source_language: sourceLanguage,
+      email
+    })
+  });
+  return handleResponse(res);
 }

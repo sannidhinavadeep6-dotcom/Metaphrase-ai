@@ -8,7 +8,8 @@ WORKDIR /app
 # Set environment variables for 24/7 production resilience
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DB_PATH=/app/data/metaphrase_app.db
+    DB_PATH=/app/data/metaphrase_app.db \
+    PYTHONPATH=/app:/app/backend
 
 # Install system dependencies & curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -20,13 +21,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p /app/data
 
 # Install python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r ./backend/requirements.txt
 
 # Copy application files
-COPY server.py database.py ./
-COPY utils/ ./utils/
-COPY assets/ ./assets/
+COPY backend/ ./backend/
+COPY database/ ./database/
 
 # Expose port
 EXPOSE 8000
@@ -36,4 +36,5 @@ HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8000/api/health || exit 1
 
 # Run with multi-threaded high-throughput Uvicorn
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--timeout-keep-alive", "65"]
+CMD ["uvicorn", "backend.server:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4", "--timeout-keep-alive", "65"]
+

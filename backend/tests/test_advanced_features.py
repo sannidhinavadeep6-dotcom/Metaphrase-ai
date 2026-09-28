@@ -29,7 +29,7 @@ def test_originality_index_scoring():
 def test_citation_generation_formats():
     citations = generate_citations(
         title="Deep Learning Frameworks",
-        author="Nilesh Hake",
+        author="Navadeep Sannidhi",
         year="2026",
         source_url="Metaphrase AI Engine"
     )
@@ -39,6 +39,6 @@ def test_citation_generation_formats():
     assert "chicago" in citations
     assert "harvard" in citations
 
-    assert "Hake, N." in citations["apa"]
+    assert "Sannidhi, N." in citations["apa"]
     assert "(2026)" in citations["apa"]
-    assert "Nilesh Hake" in citations["mla"]
+    assert "Navadeep Sannidhi" in citations["mla"]

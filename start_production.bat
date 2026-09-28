@@ -14,7 +14,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 
 echo Docker not detected. Launching local 24/7 background services...
-start /b .\venv\Scripts\python.exe -m uvicorn server:app --host 0.0.0.0 --port 8000 --workers 4
+start /b .\venv\Scripts\python.exe -m uvicorn backend.server:app --host 0.0.0.0 --port 8000 --workers 4
 cd frontend
 start /b npm.cmd run preview -- --port 80 --host
 cd ..

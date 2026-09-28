@@ -6,7 +6,9 @@ import json
 from datetime import datetime
 from contextlib import contextmanager
 
-DB_NAME = os.environ.get('DB_PATH', 'metaphrase_app.db')
+DB_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_DB_PATH = os.path.join(DB_DIR, 'metaphrase_app.db')
+DB_NAME = os.environ.get('DB_PATH', DEFAULT_DB_PATH)
 
 def hash_password(password: str) -> str:
     """Generates a secure salted bcrypt password hash."""

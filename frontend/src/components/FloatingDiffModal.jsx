@@ -2,65 +2,62 @@ import React from 'react';
 import { X, GitCompare } from 'lucide-react';
 
 export default function FloatingDiffModal({ originalText, paraphrasedText, onClose }) {
-  const generateDiffElements = () => {
-    const origWords = (originalText || '').trim().split(/\s+/);
-    const paraWords = (paraphrasedText || '').trim().split(/\s+/);
-
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-slate-50/90 p-5 rounded-2xl border border-slate-200/80">
-          <div className="text-xs uppercase font-bold text-slate-500 mb-3 flex items-center justify-between">
-            <span>Original Source Text</span>
-            <span className="text-slate-400 font-mono">{origWords.length} words</span>
-          </div>
-          <div className="text-slate-700 leading-relaxed text-sm font-medium">
-            {originalText}
-          </div>
-        </div>
-
-        <div className="bg-sky-50/70 p-5 rounded-2xl border border-sky-200/80">
-          <div className="text-xs uppercase font-bold text-sky-700 mb-3 flex items-center justify-between">
-            <span>Paraphrased & Transformed Text</span>
-            <span className="text-sky-600 font-mono">{paraWords.length} words</span>
-          </div>
-          <div className="text-slate-800 leading-relaxed text-sm font-medium">
-            {paraphrasedText}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const origWords = (originalText || '').trim().split(/\s+/).filter(Boolean);
+  const paraWords = (paraphrasedText || '').trim().split(/\s+/).filter(Boolean);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fadeIn">
-      <div className="glass-modal max-w-4xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111625]/60 backdrop-blur-xs animate-fadeIn">
+      <div 
+        className="bg-white max-w-4xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E6E6E9] relative max-h-[85vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center">
+        <div className="flex items-center justify-between pb-5 border-b border-gray-100 mb-6">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[#E6F5F2] text-[#027E6F] border border-emerald-100 flex items-center justify-center">
               <GitCompare className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-xl text-slate-900">Side-by-Side Diff Inspector</h3>
-              <p className="text-xs text-slate-500">Compare original phrasing against AI transformed syntax</p>
+              <h3 className="font-bold text-xl text-[#1C1C1C]">Side-by-Side Diff Inspector</h3>
+              <p className="text-xs sm:text-sm text-[#646B81]">Compare original phrasing against AI transformed syntax</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        {generateDiffElements()}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+          <div className="bg-[#F9F9FB] p-5 rounded-2xl border border-gray-200">
+            <div className="text-xs uppercase font-bold text-gray-500 mb-3 flex items-center justify-between">
+              <span>Original Source Text</span>
+              <span className="font-mono text-[11px] bg-white px-2 py-0.5 rounded-md border border-gray-200">{origWords.length} words</span>
+            </div>
+            <div className="text-gray-800 leading-relaxed text-sm font-normal whitespace-pre-wrap max-h-72 overflow-y-auto">
+              {originalText || 'No source text provided.'}
+            </div>
+          </div>
+
+          <div className="bg-[#E6F5F2]/40 p-5 rounded-2xl border border-emerald-200">
+            <div className="text-xs uppercase font-bold text-[#027E6F] mb-3 flex items-center justify-between">
+              <span>Transformed Output</span>
+              <span className="font-mono text-[11px] bg-white text-[#027E6F] px-2 py-0.5 rounded-md border border-emerald-200">{paraWords.length} words</span>
+            </div>
+            <div className="text-[#1C1C1C] leading-relaxed text-sm font-medium whitespace-pre-wrap max-h-72 overflow-y-auto">
+              {paraphrasedText || 'No output text provided.'}
+            </div>
+          </div>
+        </div>
 
         {/* Footer */}
-        <div className="mt-8 pt-4 border-t border-slate-200/80 flex justify-end">
+        <div className="pt-4 border-t border-gray-100 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-sm"
+            className="grammarly-green-btn px-6 py-2.5 text-xs font-bold shadow-sm hover:shadow-md cursor-pointer"
           >
             Close Inspector
           </button>

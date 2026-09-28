@@ -320,8 +320,8 @@ Complete database schema with relationships and constraints as detailed in Secti
 
 **Project Information:**
 - **Project Title:** Metaphrase AI
-- **Developer:** Nilesh
-- **Contact:** nileshhake@gmail.com, +91 9014667048
-- **Technology:** Python, Streamlit, Google Gemini API
-- **Version:** 1.0
-- **Date:** July 2026
+- **Developer:** Navadeep Sannidhi
+- **Contact:** sannidhinavadeep6@gmail.com
+- **Technology:** Python, FastAPI, React, Google Gemini 3.5 AI
+- **Version:** 3.0
+- **Date:** September 2026

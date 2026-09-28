@@ -86,12 +86,12 @@ export default function HistoryView({ user, onRestoreToEditor, onNotify }) {
 
   if (!user) {
     return (
-      <div className="glass-panel max-w-xl mx-auto rounded-3xl p-8 text-center my-12 shadow-xl">
-        <div className="w-16 h-16 rounded-3xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center mx-auto mb-4">
-          <History className="w-8 h-8" />
+      <div className="dual-tone-panel max-w-xl mx-auto rounded-2xl p-8 text-center my-12 shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 flex items-center justify-center mx-auto mb-4">
+          <History className="w-7 h-7" />
         </div>
-        <h3 className="text-2xl font-extrabold text-slate-900">Sign in to Access History</h3>
-        <p className="text-sm text-slate-500 mt-2 mb-6">
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Sign in to Access History</h3>
+        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4">
           Your transformations, tone analytics, and past versions are securely archived to your account.
         </p>
       </div>
@@ -103,94 +103,94 @@ export default function HistoryView({ user, onRestoreToEditor, onNotify }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">History & Analytics</h2>
-          <p className="text-sm text-slate-500">Track and restore your previous text transformations</p>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">History & Analytics</h2>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Track and restore your previous text transformations</p>
         </div>
         {history.length > 0 && (
           <button
             onClick={handleClearAll}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs border border-rose-200 transition-all self-start sm:self-auto cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950 text-rose-600 dark:text-rose-300 hover:bg-rose-100 font-semibold text-xs border border-rose-200 dark:border-rose-800 transition-all self-start sm:self-auto cursor-pointer"
           >
-            <Trash2 className="w-4 h-4" />
-            Clear All History
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear All History</span>
           </button>
         )}
       </div>
 
       {/* Analytics Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-panel p-5 rounded-2xl shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center">
-            <Sparkles className="w-6 h-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="dual-tone-card p-4 rounded-xl flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800 flex items-center justify-center">
+            <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Generations</div>
-            <div className="text-2xl font-black text-slate-900">{history.length}</div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Generations</div>
+            <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{history.length}</div>
           </div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center">
-            <Zap className="w-6 h-6" />
+        <div className="dual-tone-card p-4 rounded-xl flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border border-indigo-200/80 dark:border-indigo-800 flex items-center justify-center">
+            <Zap className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Favorite Tone</div>
-            <div className="text-2xl font-black text-indigo-600">{mostUsedTone}</div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Favorite Tone</div>
+            <div className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">{mostUsedTone}</div>
           </div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl shadow-xs flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200/80 flex items-center justify-center">
-            <Database className="w-6 h-6" />
+        <div className="dual-tone-card p-4 rounded-xl flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800 flex items-center justify-center">
+            <Database className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Storage Performance</div>
-            <div className="text-2xl font-black text-emerald-600">WAL &bull; &lt; 2ms</div>
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Storage Performance</div>
+            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">WAL &bull; &lt; 2ms</div>
           </div>
         </div>
       </div>
 
       {/* Search Input */}
-      <div className="glass-panel p-2 rounded-2xl shadow-xs flex items-center gap-2">
-        <Search className="w-5 h-5 text-slate-400 ml-3" />
+      <div className="dual-tone-card p-2 rounded-xl flex items-center gap-2">
+        <Search className="w-4 h-4 text-slate-400 ml-2.5" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search past transformations by keyword or tone..."
-          className="w-full bg-transparent p-2 text-sm text-slate-800 focus:outline-none placeholder-slate-400 font-medium"
+          className="w-full bg-transparent p-1.5 text-xs sm:text-sm text-slate-800 dark:text-slate-100 focus:outline-none placeholder-slate-400 font-normal"
         />
       </div>
 
       {/* History Items List */}
       {loading ? (
-        <div className="p-12 text-center text-slate-400">Loading history records...</div>
+        <div className="p-12 text-center text-slate-400 text-xs sm:text-sm">Loading history records...</div>
       ) : filteredHistory.length === 0 ? (
-        <div className="glass-panel rounded-3xl p-12 text-center shadow-xs">
-          <History className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h4 className="text-lg font-bold text-slate-700">No Transformations Found</h4>
-          <p className="text-xs text-slate-500 mt-1">Transform text in the Paraphraser workspace to archive it here.</p>
+        <div className="dual-tone-panel rounded-2xl p-12 text-center">
+          <History className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+          <h4 className="text-base font-semibold text-slate-700 dark:text-slate-300">No Transformations Found</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Transform text in the Paraphraser workspace to archive it here.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredHistory.map((item) => (
             <div
               key={item.id}
-              className="glass-panel rounded-3xl p-5 sm:p-6 shadow-sm transition-all hover:shadow-md space-y-4"
+              className="dual-tone-panel rounded-2xl p-4 sm:p-5 space-y-3"
             >
               {/* Header metadata */}
-              <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80 font-bold text-xs">
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold text-xs">
                     {item.difficulty} Tone
                   </span>
-                  <span className="text-xs text-slate-400 font-medium">{item.timestamp}</span>
+                  <span className="text-xs text-slate-400">{item.timestamp}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onRestoreToEditor(item.original_text, item.paraphrased_text, item.difficulty)}
                     title="Load into workspace"
-                    className="flex items-center gap-1 text-xs font-bold text-sky-600 hover:text-sky-700 px-3 py-1.5 rounded-xl hover:bg-sky-50 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 px-2.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors cursor-pointer"
                   >
                     <span>Restore</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -199,31 +199,31 @@ export default function HistoryView({ user, onRestoreToEditor, onNotify }) {
                   <button
                     onClick={() => handleCopy(item.id, item.paraphrased_text)}
                     title="Copy output"
-                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                   >
-                    {copiedId === item.id ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                    {copiedId === item.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
                   </button>
 
                   <button
                     onClick={() => handleDeleteItem(item.id)}
                     title="Delete item"
-                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors cursor-pointer"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
               {/* Text Comparison */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm leading-relaxed font-medium">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                  <div className="text-[11px] font-bold uppercase text-slate-400 mb-1">Source Text</div>
-                  <div className="text-slate-600 line-clamp-4">{item.original_text}</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm leading-relaxed">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <div className="text-[10px] font-semibold uppercase text-slate-400 mb-1">Source Text</div>
+                  <div className="text-slate-600 dark:text-slate-300 line-clamp-3 font-normal">{item.original_text}</div>
                 </div>
 
-                <div className="bg-sky-50/70 p-4 rounded-2xl border border-sky-200/80">
-                  <div className="text-[11px] font-bold uppercase text-sky-700 mb-1">Paraphrased Output</div>
-                  <div className="text-slate-800 line-clamp-4 font-semibold">{item.paraphrased_text}</div>
+                <div className="bg-blue-50/60 dark:bg-blue-950/40 p-3.5 rounded-xl border border-blue-200 dark:border-blue-900/60">
+                  <div className="text-[10px] font-semibold uppercase text-blue-700 dark:text-blue-300 mb-1">Paraphrased Output</div>
+                  <div className="text-slate-800 dark:text-slate-100 line-clamp-3 font-medium">{item.paraphrased_text}</div>
                 </div>
               </div>
             </div>

@@ -1,92 +1,91 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --color-brand-green: #027E6F;
+    --color-brand-green-hover: #006356;
+    --color-brand-green-light: #E6F5F2;
+    --color-brand-dark: #111625;
+    --color-text-primary: #1C1C1C;
+    --color-text-secondary: #3E4049;
+    --color-text-subdued: #646B81;
+    --color-bg-page: #FFFFFF;
+    --color-bg-subtle: #F9F9FB;
+    --color-border-subtle: #E6E6E9;
+    --color-border-focus: #027E6F;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: #f0f7ff;
-    background-image: 
-      radial-gradient(at 15% 15%, rgba(56, 189, 248, 0.2) 0px, transparent 50%),
-      radial-gradient(at 85% 20%, rgba(168, 85, 247, 0.15) 0px, transparent 50%),
-      radial-gradient(at 50% 80%, rgba(56, 189, 248, 0.18) 0px, transparent 55%),
-      radial-gradient(at 90% 85%, rgba(16, 185, 129, 0.12) 0px, transparent 50%);
-    background-attachment: fixed;
-    color: #0f172a;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-page);
     min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Outfit', sans-serif;
-    letter-spacing: -0.02em;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 700;
   }
 }
 
-/* Glassmorphic Components */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 1px 1px rgba(255, 255, 255, 0.9) inset;
+/* Custom Grammarly Styles & Utilities */
+.grammarly-green-btn {
+  background-color: #027E6F;
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+.grammarly-green-btn:hover {
+  background-color: #006356;
 }
 
-.glass-panel-hover {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.grammarly-secondary-btn {
+  background-color: #FFFFFF;
+  color: #1C1C1C;
+  border: 1px solid #D1D5DB;
+  font-weight: 500;
+  border-radius: 9999px;
+  transition: all 0.15s ease-in-out;
+}
+.grammarly-secondary-btn:hover {
+  background-color: #F9F9FB;
+  border-color: #9CA3AF;
 }
 
-.glass-panel-hover:hover {
-  transform: translateY(-4px);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.25), 0 10px 20px -5px rgba(15, 23, 42, 0.05);
+.grammarly-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E6E6E9;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px -2px rgba(17, 22, 37, 0.05), 0 2px 6px -1px rgba(17, 22, 37, 0.02);
 }
 
-.glass-modal {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  box-shadow: 0 30px 60px -12px rgba(14, 165, 233, 0.35), 0 0 0 1px rgba(255, 255, 255, 1) inset;
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.glass-dock {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 20px 45px -10px rgba(14, 165, 233, 0.3), 0 0 1px 1px rgba(255,255,255,1) inset;
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Micro-Animations */
-@keyframes floatSlow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-float {
-  animation: floatSlow 4s ease-in-out infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.6); }
-}
-
-.animate-glow {
-  animation: pulseGlow 3s ease-in-out infinite;
-}
-
-/* Custom Scrollbars */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(241, 245, 249, 0.6);
-  border-radius: 8px;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
-  border-radius: 8px;
+  background: #D1D5DB;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(2, 132, 199, 0.7);
+  background: #9CA3AF;
 }

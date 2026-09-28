@@ -9,9 +9,13 @@ import {
   Zap, 
   Globe, 
   Layers, 
-  AlertCircle 
+  AlertCircle,
+  FileCode,
+  FileSpreadsheet
 } from 'lucide-react';
 import { uploadBatchDocument, downloadDocx } from '../services/api';
+
+const SUPPORTED_EXTS = ['pdf', 'docx', 'doc', 'txt', 'md', 'rtf', 'csv', 'json', 'html', 'rst', 'log', 'tsv'];
 
 export default function BatchProcessingModal({ 
   onClose, 
@@ -37,12 +41,12 @@ export default function BatchProcessingModal({
 
   const validateAndSetFile = (f) => {
     const ext = f.name.split('.').pop().toLowerCase();
-    if (!['docx', 'txt'].includes(ext)) {
-      onNotify('Please upload a .docx or .txt document.', 'error');
+    if (!SUPPORTED_EXTS.includes(ext)) {
+      onNotify(`Unsupported format. Supported types: ${SUPPORTED_EXTS.map(x => '.' + x).join(', ')}`, 'error');
       return;
     }
-    if (f.size > 10 * 1024 * 1024) {
-      onNotify('File size exceeds 10MB limit.', 'error');
+    if (f.size > 25 * 1024 * 1024) {
+      onNotify('File size exceeds 25MB limit.', 'error');
       return;
     }
     setFile(f);
@@ -115,23 +119,34 @@ export default function BatchProcessingModal({
     onNotify('Text (.txt) downloaded.', 'success');
   };
 
+  const getFileBadge = (filename) => {
+    const ext = filename?.split('.').pop().toLowerCase();
+    if (ext === 'pdf') return <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[10px]">PDF</span>;
+    if (['docx', 'doc'].includes(ext)) return <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px]">WORD</span>;
+    if (['txt', 'md', 'rtf'].includes(ext)) return <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[10px]">TEXT</span>;
+    return <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200 font-bold text-[10px] uppercase">{ext}</span>;
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fadeIn">
-      <div className="glass-modal max-w-3xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111625]/60 backdrop-blur-xs animate-fadeIn">
+      <div 
+        className="bg-white max-w-3xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E6E6E9] relative max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center">
+        <div className="flex items-center justify-between pb-5 border-b border-gray-100 mb-6">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[#E6F5F2] text-[#027E6F] border border-emerald-100 flex items-center justify-center">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-xl text-slate-900">Document Batch Processing</h3>
-              <p className="text-xs text-slate-500">Upload entire .docx or .txt files for chunked AI transformation</p>
+              <h3 className="font-bold text-xl text-[#1C1C1C]">Document Batch Transformation</h3>
+              <p className="text-xs sm:text-sm text-[#646B81]">Upload PDF, Word (.docx/.doc), Markdown, Text, RTF & CSV files</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -140,14 +155,14 @@ export default function BatchProcessingModal({
         {/* Configuration Row: Tone & Target Language */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-sky-600" />
-              Target Tone
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#027E6F]" />
+              <span>Target Tone</span>
             </label>
             <select
               value={selectedTone}
               onChange={(e) => setSelectedTone(e.target.value)}
-              className="w-full bg-white/90 border border-slate-200/80 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              className="w-full bg-[#F9F9FB] border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:border-[#027E6F] focus:ring-2 focus:ring-[#027E6F]/20 cursor-pointer"
             >
               <option value="Simple">Simple & Clear</option>
               <option value="Fluent">Natural & Fluent</option>
@@ -157,14 +172,14 @@ export default function BatchProcessingModal({
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <Globe className="w-3.5 h-3.5 text-indigo-600" />
-              Target Language
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-[#027E6F]" />
+              <span>Target Language</span>
             </label>
             <select
               value={selectedLang}
               onChange={(e) => setSelectedLang(e.target.value)}
-              className="w-full bg-white/90 border border-slate-200/80 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
+              className="w-full bg-[#F9F9FB] border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-gray-900 focus:outline-none focus:border-[#027E6F] focus:ring-2 focus:ring-[#027E6F]/20 cursor-pointer"
             >
               <option value="English">English</option>
               <option value="Spanish (Español)">Spanish</option>
@@ -190,116 +205,137 @@ export default function BatchProcessingModal({
             onDragOver={handleDrag}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`border-2 border-dashed rounded-3xl p-8 text-center cursor-pointer transition-all ${
+            className={`border-2 border-dashed rounded-2xl p-8 sm:p-10 text-center cursor-pointer transition-all ${
               dragActive 
-                ? 'border-sky-500 bg-sky-50/50 scale-[1.01]' 
-                : 'border-slate-300 hover:border-sky-400 bg-white/60 hover:bg-slate-50/80'
+                ? 'border-[#027E6F] bg-emerald-50/60' 
+                : 'border-gray-300 hover:border-[#027E6F] bg-[#F9F9FB] hover:bg-emerald-50/20'
             }`}
           >
             <input
               ref={fileInputRef}
               type="file"
-              accept=".docx,.txt"
+              accept=".pdf,.docx,.doc,.txt,.md,.rtf,.csv,.json,.html,.rst,.log,.tsv"
               onChange={handleFileChange}
               className="hidden"
             />
-            <div className="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center mx-auto mb-3">
+            <div className="w-14 h-14 rounded-2xl bg-[#E6F5F2] text-[#027E6F] border border-emerald-100 flex items-center justify-center mx-auto mb-4 shadow-2xs">
               <UploadCloud className="w-7 h-7" />
             </div>
             {file ? (
-              <div>
-                <div className="font-bold text-slate-900 text-base">{file.name}</div>
-                <div className="text-xs text-slate-500 mt-1">{(file.size / 1024).toFixed(1)} KB &bull; Click or drop another to replace</div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-center gap-2">
+                  {getFileBadge(file.name)}
+                  <span className="font-bold text-[#1C1C1C] text-sm sm:text-base">{file.name}</span>
+                </div>
+                <div className="text-xs text-[#646B81]">
+                  {(file.size / 1024).toFixed(1)} KB &bull; <span className="text-[#027E6F] font-semibold">Click to replace file</span>
+                </div>
               </div>
             ) : (
-              <div>
-                <div className="font-bold text-slate-800 text-base">Drop your .docx or .txt file here</div>
-                <div className="text-xs text-slate-500 mt-1">Supports Microsoft Word (.docx) and Plain Text (.txt) up to 10MB</div>
+              <div className="space-y-2">
+                <div className="font-bold text-[#1C1C1C] text-sm sm:text-base">
+                  Drop any PDF, Word, or Document file here
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold">.PDF</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">.DOCX / .DOC</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">.TXT / .MD</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-bold">.RTF / .CSV</span>
+                </div>
+                <p className="text-[11px] text-[#646B81] pt-1">
+                  Automatic page & paragraph chunking up to 25MB
+                </p>
               </div>
             )}
           </div>
         )}
 
-        {/* Action Button when file selected */}
-        {file && !result && (
-          <div className="mt-6 flex justify-end">
+        {/* Process Action Button */}
+        {!result && (
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              className="grammarly-secondary-btn px-5 py-2.5 text-xs sm:text-sm font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
             <button
               onClick={handleProcess}
-              disabled={loading}
-              className="flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-md transition-all cursor-pointer disabled:opacity-50"
+              disabled={!file || loading}
+              className="grammarly-green-btn flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50"
             >
-              {loading ? (
-                <>
-                  <Zap className="w-4 h-4 text-sky-400 animate-spin" />
-                  <span>Processing Chunks & Transforming...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-sky-400" />
-                  <span>Process Entire Document</span>
-                </>
-              )}
+              <Sparkles className="w-4 h-4" />
+              <span>{loading ? 'Processing Chunks...' : 'Transform Entire Document'}</span>
             </button>
           </div>
         )}
 
-        {/* Results Preview & Export */}
+        {/* Result View */}
         {result && (
-          <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+          <div className="mt-6 space-y-6 animate-fadeIn">
+            <div className="p-4 rounded-2xl bg-[#E6F5F2] border border-emerald-200 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full bg-[#027E6F] text-white flex items-center justify-center">
                   <Check className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-sm text-emerald-950">Document Transformed Successfully</div>
-                  <div className="text-xs text-emerald-700">
-                    {result.total_paragraphs} paragraphs &bull; {result.total_chunks} concurrent chunks &bull; {result.target_language}
+                  <span className="font-bold text-xs sm:text-sm text-emerald-950">
+                    Transformation Complete ({result.total_chunks} Chunks Processed)
+                  </span>
+                  <div className="text-[11px] text-emerald-800">
+                    Tone: <strong>{result.tone}</strong> &bull; Language: <strong>{result.target_language}</strong>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={() => { setResult(null); setFile(null); }}
-                className="text-xs font-bold text-slate-500 hover:text-slate-900 px-3 py-1.5 rounded-lg hover:bg-white/80 transition-all cursor-pointer"
-              >
-                Upload Another
-              </button>
-            </div>
 
-            {/* Side-by-side snippet view */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-medium">
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 max-h-60 overflow-y-auto">
-                <div className="text-[11px] uppercase font-bold text-slate-500 mb-2">Original Document Content</div>
-                <div className="text-slate-700 whitespace-pre-wrap leading-relaxed">{result.original_text}</div>
-              </div>
-
-              <div className="bg-sky-50/60 p-4 rounded-2xl border border-sky-200/80 max-h-60 overflow-y-auto">
-                <div className="text-[11px] uppercase font-bold text-sky-700 mb-2">Transformed Document Output</div>
-                <div className="text-slate-900 whitespace-pre-wrap leading-relaxed">{result.paraphrased_text}</div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownloadDocx}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-emerald-50 text-[#027E6F] font-bold text-xs border border-emerald-300 shadow-2xs transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .DOCX</span>
+                </button>
+                <button
+                  onClick={handleDownloadTxt}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#027E6F] hover:bg-[#006356] text-white font-bold text-xs shadow-2xs transition-all cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .TXT</span>
+                </button>
               </div>
             </div>
 
-            {/* Export Buttons */}
-            <div className="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-slate-200/80">
-              <button
-                onClick={handleDownloadDocx}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                Download Transformed Word (.docx)
-              </button>
+            {/* Side by side comparison */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Original Document Text</div>
+                <div className="text-xs text-[#1C1C1C] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed">
+                  {result.original_text}
+                </div>
+              </div>
 
-              <button
-                onClick={handleDownloadTxt}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold text-xs shadow-xs transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                Download Plain Text (.txt)
-              </button>
+              <div className="p-4 rounded-2xl bg-white border border-[#027E6F]/30 shadow-2xs">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#027E6F] mb-2">Paraphrased Output</div>
+                <div className="text-xs text-[#1C1C1C] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed font-medium">
+                  {result.paraphrased_text}
+                </div>
+              </div>
+            </div>
 
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setFile(null);
+                }}
+                className="grammarly-secondary-btn px-5 py-2 text-xs font-semibold cursor-pointer"
+              >
+                Process Another File
+              </button>
               <button
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="grammarly-green-btn px-6 py-2 text-xs font-bold cursor-pointer"
               >
                 Done
               </button>

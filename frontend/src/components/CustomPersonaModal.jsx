@@ -10,19 +10,20 @@ import {
   ShieldCheck, 
   FileCode, 
   PenTool, 
-  Zap 
+  Zap,
+  Check
 } from 'lucide-react';
 import { createCustomPersona, deleteCustomPersona } from '../services/api';
 
 const ICON_OPTIONS = [
-  { key: 'sparkles', label: 'Sparkle', icon: <Sparkles className="w-4 h-4" /> },
-  { key: 'briefcase', label: 'Business', icon: <Briefcase className="w-4 h-4" /> },
-  { key: 'graduation-cap', label: 'Academic', icon: <GraduationCap className="w-4 h-4" /> },
-  { key: 'shield', label: 'Legal/Security', icon: <ShieldCheck className="w-4 h-4" /> },
-  { key: 'pen', label: 'Creative', icon: <PenTool className="w-4 h-4" /> },
-  { key: 'zap', label: 'Punchy', icon: <Zap className="w-4 h-4" /> },
-  { key: 'code', label: 'Technical', icon: <FileCode className="w-4 h-4" /> },
-  { key: 'book', label: 'Editorial', icon: <BookOpen className="w-4 h-4" /> }
+  { key: 'sparkles', label: 'Sparkle', icon: <Sparkles className="w-3.5 h-3.5" /> },
+  { key: 'briefcase', label: 'Business', icon: <Briefcase className="w-3.5 h-3.5" /> },
+  { key: 'graduation-cap', label: 'Academic', icon: <GraduationCap className="w-3.5 h-3.5" /> },
+  { key: 'shield', label: 'Legal/Security', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+  { key: 'pen', label: 'Creative', icon: <PenTool className="w-3.5 h-3.5" /> },
+  { key: 'zap', label: 'Punchy', icon: <Zap className="w-3.5 h-3.5" /> },
+  { key: 'code', label: 'Technical', icon: <FileCode className="w-3.5 h-3.5" /> },
+  { key: 'book', label: 'Editorial', icon: <BookOpen className="w-3.5 h-3.5" /> }
 ];
 
 export default function CustomPersonaModal({
@@ -75,36 +76,39 @@ export default function CustomPersonaModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fadeIn">
-      <div className="glass-modal max-w-2xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111625]/60 backdrop-blur-xs animate-fadeIn">
+      <div 
+        className="bg-white max-w-2xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E6E6E9] relative max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200/80 flex items-center justify-center">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-xl text-slate-900">Custom Writing Personas</h3>
-              <p className="text-xs text-slate-500">Define specialized rules (e.g. Legal Disclaimer, Marketing Pitch)</p>
-            </div>
+        <div className="flex items-center gap-3.5 pb-5 border-b border-gray-100 mb-6">
+          <div className="w-11 h-11 rounded-2xl bg-[#E6F5F2] text-[#027E6F] border border-emerald-100 flex items-center justify-center">
+            <Sparkles className="w-5 h-5" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div>
+            <h3 className="font-bold text-xl text-[#1C1C1C]">Custom Writing Personas</h3>
+            <p className="text-xs sm:text-sm text-[#646B81]">Define specialized rewrite rules (e.g. Legal Disclaimer, Marketing Pitch, Executive Brief)</p>
+          </div>
         </div>
 
         {/* Create Persona Form */}
-        <form onSubmit={handleCreate} className="space-y-4 mb-8 bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80">
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-            <Plus className="w-4 h-4 text-sky-600" />
-            Create New Persona
+        <form onSubmit={handleCreate} className="space-y-4 mb-8 bg-[#F9F9FB] p-5 sm:p-6 rounded-2xl border border-gray-200">
+          <div className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+            <Plus className="w-4 h-4 text-[#027E6F]" />
+            <span>Create New Persona</span>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-[#1C1C1C] mb-1.5">
               Persona Title
             </label>
             <input
@@ -112,26 +116,26 @@ export default function CustomPersonaModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Corporate Marketing Copy, Legal Disclaimer, Technical Memo"
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 font-medium"
+              className="w-full bg-white border border-gray-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#027E6F] focus:ring-2 focus:ring-[#027E6F]/20 transition-all shadow-2xs"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-[#1C1C1C] mb-1.5">
               Custom AI Instructions & Style Rules
             </label>
             <textarea
               rows={3}
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
-              placeholder="Describe how the AI should rewrite the text (e.g. 'Use persuasive, energetic corporate marketing terminology with bulleted value propositions...')"
-              className="w-full bg-white border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 font-medium resize-none"
+              placeholder="Describe how the AI should rewrite the text (e.g. 'Use persuasive, energetic corporate marketing terminology with crisp takeaways...')"
+              className="w-full bg-white border border-gray-300 rounded-xl p-3.5 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#027E6F] focus:ring-2 focus:ring-[#027E6F]/20 resize-none transition-all shadow-2xs"
             />
           </div>
 
           {/* Icon Selector */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-[#1C1C1C] mb-2">
               Select Badge Icon
             </label>
             <div className="flex flex-wrap gap-2">
@@ -140,10 +144,10 @@ export default function CustomPersonaModal({
                   type="button"
                   key={opt.key}
                   onClick={() => setSelectedIcon(opt.key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
                     selectedIcon === opt.key
-                      ? 'bg-sky-50 text-sky-700 border-sky-300 ring-2 ring-sky-200'
-                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                      ? 'bg-[#027E6F] text-white border-[#027E6F] shadow-xs'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'
                   }`}
                 >
                   {opt.icon}
@@ -157,9 +161,9 @@ export default function CustomPersonaModal({
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition-all cursor-pointer disabled:opacity-50"
+              className="grammarly-green-btn flex items-center gap-2 px-6 py-2.5 text-xs sm:text-sm shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>{loading ? 'Saving...' : 'Save Custom Persona'}</span>
             </button>
           </div>
@@ -167,12 +171,12 @@ export default function CustomPersonaModal({
 
         {/* Existing Personas List */}
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-3">
+          <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3.5">
             Your Saved Personas ({personas.length})
           </div>
 
           {personas.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-sm">
+            <div className="text-center py-8 px-4 rounded-2xl bg-[#F9F9FB] border border-dashed border-gray-200 text-gray-500 text-xs sm:text-sm">
               No custom personas defined yet. Create your first tailored writing style above!
             </div>
           ) : (
@@ -180,31 +184,32 @@ export default function CustomPersonaModal({
               {personas.map((p) => (
                 <div
                   key={p.id}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-start justify-between gap-4"
+                  className="p-4 rounded-2xl bg-white border border-gray-200 hover:border-emerald-300 shadow-2xs hover:shadow-sm transition-all flex items-start justify-between gap-4"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 border border-sky-200/80 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#E6F5F2] text-[#027E6F] border border-emerald-100 flex items-center justify-center shrink-0 mt-0.5">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900">{p.title}</h4>
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-2">{p.instruction}</p>
+                      <h4 className="font-bold text-sm text-[#1C1C1C]">{p.title}</h4>
+                      <p className="text-xs text-[#646B81] mt-1 leading-relaxed line-clamp-2">{p.instruction}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => {
                         onSelectPersona(p);
                         onClose();
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs border border-sky-200 transition-all cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-full bg-[#E6F5F2] hover:bg-[#027E6F] text-[#027E6F] hover:text-white font-bold text-xs border border-emerald-200 transition-all cursor-pointer"
                     >
                       Use
                     </button>
                     <button
                       onClick={() => handleDelete(p.id, p.title)}
-                      className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Delete persona"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

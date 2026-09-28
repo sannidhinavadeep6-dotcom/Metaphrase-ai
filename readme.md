@@ -37,37 +37,37 @@
 ## 📁 Project Structure
 ```text
 Metaphrase-ai-main/
-├── frontend/                        # React SPA (Vite + TailwindCSS)
-│   ├── src/
-│   │   ├── components/              # Navbar, ParaphraseView, FloatingDock, Modals
-│   │   │   ├── BatchProcessingModal.jsx   # .docx / .txt Batch File Uploader
-│   │   │   ├── CustomPersonaModal.jsx     # User Custom Personas Manager
-│   │   │   ├── FloatingDiffModal.jsx      # Side-by-side Diff Inspector
-│   │   │   ├── FloatingMetricsModal.jsx   # Readability Analytics
-│   │   │   └── FloatingExportModal.jsx    # Document Download Center
-│   │   ├── services/api.js          # REST client communicating with FastAPI
-│   │   ├── App.jsx                  # Main orchestrator
-│   │   └── index.css                # Glassmorphism design tokens & animations
-│   ├── Dockerfile                   # Multi-stage React Nginx container
-│   └── vite.config.js               # Vite config with backend proxy
-├── tests/                           # Comprehensive QA Test Suites
-│   ├── test_api.py                  # FastAPI route integration tests
-│   ├── test_metrics.py              # Readability & linguistic formula tests
-│   └── test_security.py             # Bcrypt hashing & authentication tests
-├── .github/workflows/ci.yml         # GitHub Actions automated test & build pipeline
-├── deploy/                          # Cloud Deployment Manifests
-│   └── aws-ecs-task-definition.json # AWS ECS Fargate task definition
-├── Dockerfile                       # FastAPI backend production container
-├── docker-compose.yml               # Local/Staging multi-container orchestration
-├── server.py                        # FastAPI enterprise backend server
-├── database.py                      # Salted bcrypt database manager (SQLite WAL)
-├── utils/
-│   ├── ai_generator.py              # Multilingual Gemini AI engine with LRU caching
-│   ├── config.py                    # AWS Secrets Manager & credential vault
-│   └── text_metrics.py              # Readability & linguistic suite
-├── pytest.ini                       # Test runner configuration
-├── requirements.txt                 # Python dependencies
-└── .env                             # Environment configuration
+├── frontend/                        # React Client & Web Applications
+│   ├── src/                         # React SPA components, views & services
+│   ├── public/                      # Static web assets
+│   ├── extension/                   # Chrome / Edge browser extension
+│   ├── Dockerfile                   # Frontend container definition
+│   ├── package.json                 # Frontend dependencies
+│   └── vite.config.js               # Vite build & proxy config
+│
+├── backend/                         # Core Application Server & AI Engine
+│   ├── server.py                    # FastAPI Enterprise REST API
+│   ├── app.py                       # Streamlit interactive application
+│   ├── run_server.py                # Standalone server runner
+│   ├── utils/                       # AI generator, detector, OCR & metrics engines
+│   ├── tests/                       # Automated test suites
+│   ├── docs/                        # Specifications & IEEE documentation
+│   ├── assets/                      # Application styling & static assets
+│   ├── Dockerfile                   # Backend production container
+│   ├── requirements.txt             # Python dependencies
+│   └── pytest.ini                   # Pytest test runner configuration
+│
+├── database/                        # Database Layer & Migrations
+│   ├── database.py                  # SQLite connection pool, auth & queries
+│   ├── __init__.py                  # Database package exports
+│   ├── schema.sql                   # Database schema DDL & indexing definitions
+│   └── metaphrase_app.db            # SQLite WAL database store
+│
+├── docker-compose.yml               # Multi-container 24/7 orchestration
+├── start_production.bat             # Windows 1-click 24/7 startup script
+├── start_production.sh              # Linux/macOS 1-click startup script
+├── .env.example                     # Environment variables template
+└── readme.md                        # Master documentation
 ```
 
 ---
@@ -76,7 +76,7 @@ Metaphrase-ai-main/
 
 ### 1. Start the FastAPI Backend:
 ```powershell
-.\venv\Scripts\python -m uvicorn server:app --host 127.0.0.1 --port 8000
+.\venv\Scripts\python -m uvicorn backend.server:app --host 127.0.0.1 --port 8000
 ```
 
 ### 2. Start the React Frontend:
@@ -92,7 +92,7 @@ Open **`http://localhost:5173`** in your browser.
 
 ## 🧪 Running Automated Tests
 ```powershell
-.\venv\Scripts\pytest -v tests/
+.\venv\Scripts\pytest -v backend/tests/
 ```
 
 ---
