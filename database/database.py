@@ -3,6 +3,7 @@ import sqlite3
 import hashlib
 import bcrypt
 import json
+import secrets
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -189,6 +190,41 @@ def verify_login(email, password):
             conn.commit()
             return (role, status, name)
         return None
+
+def google_auth_user(name: str, email: str):
+    clean_email = email.strip().lower()
+    clean_name = name.strip() if name and name.strip() else clean_email.split('@')[0].capitalize()
+    with get_db() as conn:
+        c = conn.cursor()
+        c.execute("SELECT password, role, status, name FROM users WHERE email=?", (clean_email,))
+        row = c.fetchone()
+        if row:
+            stored_hash, role, status, existing_name = row
+            if status == 'rejected':
+                return (None, 'rejected', existing_name or clean_name)
+            
+            # Ensure accepted status and update last active
+            c.execute("UPDATE users SET status='accepted', last_active=CURRENT_TIMESTAMP WHERE email=?", (clean_email,))
+            c.execute(
+                "INSERT INTO activity_logs (email, feature_name, action, details, word_count) VALUES (?, ?, ?, ?, ?)",
+                (clean_email, 'Authentication', 'Logged in with Google', 'Authenticated seamlessly via Google Sign-In', 0)
+            )
+            conn.commit()
+            return (role, 'accepted', existing_name or clean_name)
+        else:
+            # New user registration via Google Sign-In
+            role = 'admin' if clean_email == 'sannidhinavadeep6@gmail.com' else 'user'
+            random_pw = secrets.token_urlsafe(24)
+            c.execute(
+                "INSERT INTO users (email, name, password, role, status, created_at, last_active) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                (clean_email, clean_name, hash_password(random_pw), role, 'accepted')
+            )
+            c.execute(
+                "INSERT INTO activity_logs (email, feature_name, action, details, word_count) VALUES (?, ?, ?, ?, ?)",
+                (clean_email, 'Authentication', 'Registered with Google', 'New user registered seamlessly via Google Sign-In', 0)
+            )
+            conn.commit()
+            return (role, 'accepted', clean_name)
 
 def get_all_users():
     with get_db() as conn:

@@ -24,7 +24,7 @@ export default function DarkCtaSection({ onOpenAuth }) {
 
           {/* Google Sign Up Button */}
           <button
-            onClick={() => onOpenAuth('login')}
+            onClick={() => onOpenAuth('google')}
             className="w-full sm:w-auto bg-[#1C2338] hover:bg-[#252E48] text-white border border-gray-700 px-6 py-3.5 rounded-full font-semibold text-sm flex items-center justify-center gap-2.5 transition-all cursor-pointer"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">

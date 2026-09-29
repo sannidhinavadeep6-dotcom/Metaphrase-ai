@@ -1,6 +1,8 @@
 import io
 import os
 import sys
+import json
+import base64
 from pathlib import Path
 import asyncio
 from typing import Optional, List
@@ -71,6 +73,12 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
+
+class GoogleAuthRequest(BaseModel):
+    email: Optional[str] = None
+    name: Optional[str] = ""
+    credential: Optional[str] = None
+    picture: Optional[str] = None
 
 class StatusUpdateRequest(BaseModel):
     status: str  # 'accepted', 'rejected', 'pending'
@@ -226,6 +234,54 @@ def register(req: RegisterRequest):
             "email": clean_email,
             "role": "user",
             "status": "accepted"
+        }
+    }
+
+@app.post("/api/auth/google")
+def google_auth(req: GoogleAuthRequest):
+    email = req.email or ""
+    name = req.name or ""
+    picture = req.picture or ""
+
+    # Parse Google JWT ID token credential if provided
+    if req.credential:
+        try:
+            parts = req.credential.split('.')
+            if len(parts) >= 2:
+                payload_str = parts[1]
+                payload_str += '=' * (-len(payload_str) % 4)
+                decoded = json.loads(base64.urlsafe_b64decode(payload_str).decode('utf-8'))
+                if decoded.get('email'):
+                    email = decoded.get('email')
+                if decoded.get('name'):
+                    name = decoded.get('name')
+                elif decoded.get('given_name'):
+                    name = decoded.get('given_name')
+                if decoded.get('picture'):
+                    picture = decoded.get('picture')
+        except Exception as e:
+            pass
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid Google account email is required.")
+
+    clean_email = email.strip().lower()
+    clean_name = name.strip() if name and name.strip() else clean_email.split('@')[0].capitalize()
+
+    role, status, final_name = database.google_auth_user(clean_name, clean_email)
+    if status == 'rejected':
+        return {"success": False, "status": "rejected", "message": "Account access has been rejected by the administrator."}
+
+    return {
+        "success": True,
+        "status": status,
+        "message": f"Successfully signed in with Google as {final_name}!",
+        "user": {
+            "name": final_name,
+            "email": clean_email,
+            "role": role,
+            "status": status,
+            "picture": picture
         }
     }
 

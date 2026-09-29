@@ -66,6 +66,18 @@ export async function registerUser(name, email, password) {
 }
 
 /**
+ * Google Sign In / Fast OAuth Login
+ */
+export async function googleLogin(payload) {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(typeof payload === 'string' ? { email: payload } : payload)
+  });
+  return handleResponse(res);
+}
+
+/**
  * Admin: Get dashboard global analytics
  */
 export async function fetchAdminDashboard() {

@@ -44,7 +44,8 @@ import {
   transformText, 
   humanizeText, 
   fetchLanguages, 
-  fetchCustomPersonas 
+  fetchCustomPersonas,
+  googleLogin
 } from './services/api';
 
 export default function App() {
@@ -144,8 +145,48 @@ export default function App() {
   // URL Hash Listener & Deep Linking (#pricing, #grammar, #solutions, #faq, etc.)
   useEffect(() => {
     const handleHashNavigation = () => {
-      const hash = window.location.hash.toLowerCase();
-      if (!hash) return;
+      const rawHash = window.location.hash;
+      if (!rawHash) return;
+
+      // Handle Google OAuth Redirect Access Token (#access_token=ya29...)
+      if (rawHash.includes('access_token=')) {
+        try {
+          const hashParams = new URLSearchParams(rawHash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          if (accessToken) {
+            // Remove token from browser URL address bar
+            window.history.replaceState(null, '', window.location.pathname);
+            showToast('Signing in with your Google account...', 'info');
+
+            fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${accessToken}` }
+            })
+              .then((res) => res.json())
+              .then(async (profile) => {
+                if (profile && profile.email) {
+                  const data = await googleLogin({
+                    email: profile.email,
+                    name: profile.name,
+                    picture: profile.picture
+                  });
+                  if (data.success && data.user) {
+                    handleLoginSuccess(data.user);
+                    showToast(`Welcome, ${data.user.name || profile.name}! Signed in via Google.`, 'success');
+                  }
+                }
+              })
+              .catch((err) => {
+                console.error('Google OAuth userinfo error:', err);
+                showToast('Failed to complete Google Sign-in.', 'error');
+              });
+            return;
+          }
+        } catch (e) {
+          console.error('Error parsing OAuth token hash:', e);
+        }
+      }
+
+      const hash = rawHash.toLowerCase();
 
       if (hash === '#pricing') {
         setActiveTab('pricing');

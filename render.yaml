@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: metaphrase-ai
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DB_PATH
+        value: /app/data/metaphrase_app.db
+      - key: PORT
+        value: 8000
