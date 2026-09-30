@@ -121,6 +121,30 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Global Escape key handler to close all modals and return to Metaphrase interface
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        setShowAuthModal(false);
+        setShowFavoritesModal(false);
+        setShowDiffModal(false);
+        setShowMetricsModal(false);
+        setShowExportModal(false);
+        setShowBatchModal(false);
+        setShowCustomPersonaModal(false);
+        setShowOcrModal(false);
+        setShowOriginalityModal(false);
+        setShowSolutionsModal(false);
+        setShowGuideModal(false);
+        setShowIntegrationsModal(false);
+        setShowSupportModal(false);
+        setSelectedSentence(null);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
+
   // Sync Favorites to LocalStorage
   useEffect(() => {
     localStorage.setItem('metaphrase_favorites', JSON.stringify(favorites));

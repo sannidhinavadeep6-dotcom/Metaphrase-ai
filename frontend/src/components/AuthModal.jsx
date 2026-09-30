@@ -36,6 +36,17 @@ export default function AuthModal({
     setTab(initialTab || 'login');
   }, [initialTab]);
 
+  // Handle Escape key to close modal and return to Metaphrase interface
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (onClose) onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   // Callback normalization so both prop naming styles work flawlessly
   const handleSuccessCallback = onSuccess || onLoginSuccess || (() => {});
   const handleToastCallback = showToast || onNotify || (() => {});
@@ -199,9 +210,14 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0d14]/75 backdrop-blur-xs animate-fadeIn font-sans">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0d14]/75 backdrop-blur-xs animate-fadeIn font-sans cursor-pointer"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <div 
-        className="bg-white max-w-[440px] w-full rounded-2xl p-7 sm:p-8 shadow-2xl border border-[#E6E6E9] relative animate-fadeIn"
+        className="bg-white max-w-[440px] w-full rounded-2xl p-7 sm:p-8 shadow-2xl border border-[#E6E6E9] relative animate-fadeIn cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
