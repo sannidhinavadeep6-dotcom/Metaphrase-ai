@@ -79,16 +79,68 @@ export default function PlagiarismCheckerTool({ user, showToast }) {
               )}
             </div>
 
-            <textarea
-              rows={12}
-              value={inputText}
-              onChange={(e) => {
-                setInputText(e.target.value);
-                if (result) setResult(null);
-              }}
-              placeholder="Paste your essay, article, or research paper draft to scan for matching web sources and plagiarism..."
-              className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
-            />
+            {result ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                  <span className="font-bold text-gray-700">Similarity Highlight Legend:</span>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-rose-200 border border-rose-400 inline-block"></span>
+                      <span className="text-rose-900 font-semibold">Red: Direct Web Match</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-yellow-200 border border-yellow-400 inline-block"></span>
+                      <span className="text-yellow-950 font-semibold">Yellow: Paraphrased Match</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-emerald-100 border border-emerald-300 inline-block"></span>
+                      <span className="text-emerald-900 font-semibold">Green: Original</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200 min-h-[200px] max-h-72 overflow-y-auto whitespace-pre-wrap">
+                  {inputText.split(/(?<=[.?!])\s+/).map((sentence, sIdx) => {
+                    const matchedSrc = result.sources?.find(src => 
+                      sentence.toLowerCase().includes(src.matched_snippet?.toLowerCase().substring(0, 15)) ||
+                      (src.matched_snippet && src.matched_snippet.toLowerCase().includes(sentence.toLowerCase().substring(0, 15)))
+                    );
+                    if (matchedSrc) {
+                      const isHighMatch = matchedSrc.similarity_pct >= 60;
+                      return (
+                        <span
+                          key={sIdx}
+                          className={`px-1.5 py-0.5 rounded-sm mx-0.5 inline-block font-semibold transition-all ${
+                            isHighMatch
+                              ? 'bg-rose-100 text-rose-950 border border-rose-300'
+                              : 'bg-yellow-200 text-yellow-950 border border-yellow-400'
+                          }`}
+                          title={`Matched with ${matchedSrc.title} (${matchedSrc.similarity_pct}% similarity)`}
+                        >
+                          {sentence}{' '}
+                        </span>
+                      );
+                    }
+                    return (
+                      <span key={sIdx} className="bg-emerald-50/60 text-emerald-950 px-1 py-0.5 rounded-xs mx-0.5 inline-block">
+                        {sentence}{' '}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <textarea
+                rows={12}
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  if (result) setResult(null);
+                }}
+                placeholder="Paste your essay, article, or research paper draft to scan for matching web sources and plagiarism..."
+                className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
+              />
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100">

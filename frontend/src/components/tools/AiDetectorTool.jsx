@@ -76,16 +76,62 @@ export default function AiDetectorTool({ user, showToast, onSwitchToHumanizer })
               )}
             </div>
 
-            <textarea
-              rows={12}
-              value={inputText}
-              onChange={(e) => {
-                setInputText(e.target.value);
-                if (result) setResult(null);
-              }}
-              placeholder="Paste any article, essay, email, or generated text to analyze for AI probability and synthetic robotic patterns..."
-              className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
-            />
+            {result ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                  <span className="font-bold text-gray-700">AI Risk Highlights:</span>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-rose-200 border border-rose-400 inline-block"></span>
+                      <span className="text-rose-900 font-semibold">Red: AI Pattern</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-yellow-200 border border-yellow-400 inline-block"></span>
+                      <span className="text-yellow-950 font-semibold">Yellow: AI Marker Term</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-emerald-100 border border-emerald-300 inline-block"></span>
+                      <span className="text-emerald-900 font-semibold">Green: Human</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200 min-h-[200px] max-h-72 overflow-y-auto whitespace-pre-wrap">
+                  {inputText.split(/(?<=[.?!])\s+/).map((sentence, sIdx) => {
+                    const markers = result.markers_found || [];
+                    const hasMarker = markers.some(m => sentence.toLowerCase().includes(m.toLowerCase()));
+                    const isHighAi = result.ai_probability >= 50;
+
+                    return (
+                      <span
+                        key={sIdx}
+                        className={`px-1.5 py-0.5 rounded-sm mx-0.5 inline-block font-medium transition-all ${
+                          isHighAi
+                            ? 'bg-rose-100/90 text-rose-950 border border-rose-300'
+                            : hasMarker
+                            ? 'bg-yellow-200 text-yellow-950 border border-yellow-400'
+                            : 'bg-emerald-50 text-emerald-950 border border-emerald-200'
+                        }`}
+                        title={isHighAi ? 'High AI Probability Sentence' : hasMarker ? 'Contains Synthetic AI Markers' : 'Likely Human Structure'}
+                      >
+                        {sentence}{' '}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <textarea
+                rows={12}
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  if (result) setResult(null);
+                }}
+                placeholder="Paste any article, essay, email, or generated text to analyze for AI probability and synthetic robotic patterns..."
+                className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
+              />
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100">

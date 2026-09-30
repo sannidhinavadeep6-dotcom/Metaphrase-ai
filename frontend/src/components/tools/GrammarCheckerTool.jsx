@@ -103,26 +103,80 @@ export default function GrammarCheckerTool({ user, showToast }) {
                 <FileCheck className="w-4 h-4 text-[#027E6F]" />
                 <span>Input Text</span>
               </span>
-              {!inputText && (
-                <button
-                  onClick={() => setInputText(sampleGrammarText)}
-                  className="text-xs text-[#027E6F] hover:underline font-semibold cursor-pointer"
-                >
-                  Try Sample Text
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {!inputText && (
+                  <button
+                    onClick={() => setInputText(sampleGrammarText)}
+                    className="text-xs text-[#027E6F] hover:underline font-semibold cursor-pointer"
+                  >
+                    Try Sample Text
+                  </button>
+                )}
+              </div>
             </div>
 
-            <textarea
-              rows={12}
-              value={inputText}
-              onChange={(e) => {
-                setInputText(e.target.value);
-                if (result) setResult(null);
-              }}
-              placeholder="Paste or type your text here to check grammar, spelling, punctuation, and style clarity..."
-              className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
-            />
+            {result && result.issues?.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                  <span className="font-bold text-gray-700">Issue Color Codes:</span>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-rose-200 border border-rose-400 inline-block"></span>
+                      <span className="text-rose-900 font-semibold">Red: Spelling/Grammar</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2.5 h-2.5 rounded-xs bg-yellow-200 border border-yellow-400 inline-block"></span>
+                      <span className="text-yellow-950 font-semibold">Yellow: Clarity/Style</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200 min-h-[200px] max-h-72 overflow-y-auto whitespace-pre-wrap">
+                  {(() => {
+                    let rendered = inputText;
+                    return (
+                      <div className="space-y-2">
+                        {inputText.split(/\s+/).map((word, wIdx) => {
+                          const cleanW = word.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
+                          const matchingIssue = result.issues.find(iss => 
+                            iss.original.toLowerCase().includes(cleanW) || cleanW.includes(iss.original.toLowerCase())
+                          );
+                          if (matchingIssue) {
+                            const isGrammarOrSpelling = ['spelling', 'grammar', 'punctuation'].includes(matchingIssue.type.toLowerCase());
+                            return (
+                              <span
+                                key={wIdx}
+                                onClick={() => handleApplyFix(matchingIssue)}
+                                className={`px-1.5 py-0.5 rounded-sm mx-0.5 inline-block font-semibold cursor-pointer transition-all ${
+                                  isGrammarOrSpelling
+                                    ? 'bg-rose-100 text-rose-900 border border-rose-300 line-through hover:bg-rose-200'
+                                    : 'bg-yellow-200 text-yellow-950 border border-yellow-400 hover:bg-yellow-300'
+                                }`}
+                                title={`Click to apply fix: ${matchingIssue.original} → ${matchingIssue.suggestion} (${matchingIssue.explanation})`}
+                              >
+                                {word}{' '}
+                              </span>
+                            );
+                          }
+                          return <span key={wIdx}>{word} </span>;
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              <textarea
+                rows={12}
+                value={inputText}
+                onChange={(e) => {
+                  setInputText(e.target.value);
+                  if (result) setResult(null);
+                }}
+                placeholder="Paste or type your text here to check grammar, spelling, punctuation, and style clarity..."
+                className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
+              />
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-gray-100">
@@ -217,32 +271,41 @@ export default function GrammarCheckerTool({ user, showToast }) {
                     </div>
 
                     <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                      {result.issues.map((issue) => (
-                        <div
-                          key={issue.id}
-                          className="p-3.5 rounded-2xl bg-white border border-gray-200 hover:border-emerald-300 transition-all space-y-1.5 shadow-2xs"
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-[#027E6F] bg-[#E6F5F2] px-2 py-0.5 rounded border border-emerald-200 text-[10px] uppercase">
-                              {issue.type}
-                            </span>
-                            <button
-                              onClick={() => handleApplyFix(issue)}
-                              className="px-2.5 py-1 rounded-full bg-[#027E6F] hover:bg-[#006356] text-white text-[11px] font-bold cursor-pointer transition-colors"
-                            >
-                              Apply Fix
-                            </button>
-                          </div>
+                      {result.issues.map((issue) => {
+                        const isGrammarOrSpelling = ['spelling', 'grammar', 'punctuation'].includes(issue.type.toLowerCase());
+                        return (
+                          <div
+                            key={issue.id}
+                            className={`p-3.5 rounded-2xl bg-white border transition-all space-y-1.5 shadow-2xs ${
+                              isGrammarOrSpelling ? 'border-rose-200 hover:border-rose-400' : 'border-amber-200 hover:border-amber-400'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between text-xs">
+                              <span className={`font-bold px-2 py-0.5 rounded text-[10px] uppercase border ${
+                                isGrammarOrSpelling
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : 'bg-amber-50 text-amber-800 border-amber-200'
+                              }`}>
+                                {issue.type}
+                              </span>
+                              <button
+                                onClick={() => handleApplyFix(issue)}
+                                className="px-2.5 py-1 rounded-full bg-[#027E6F] hover:bg-[#006356] text-white text-[11px] font-bold cursor-pointer transition-colors"
+                              >
+                                Apply Fix
+                              </button>
+                            </div>
 
-                          <div className="text-xs text-gray-800">
-                            <span className="line-through text-rose-500 mr-1.5 font-semibold">{issue.original}</span>
-                            <ArrowRight className="w-3 h-3 inline text-gray-400 mr-1.5" />
-                            <span className="text-[#027E6F] font-bold">{issue.suggestion}</span>
-                          </div>
+                            <div className="text-xs text-gray-800">
+                              <span className="line-through text-rose-600 mr-1.5 font-semibold bg-rose-50 px-1 rounded">{issue.original}</span>
+                              <ArrowRight className="w-3 h-3 inline text-gray-400 mr-1.5" />
+                              <span className="text-[#027E6F] font-bold bg-emerald-50 px-1 rounded border border-emerald-200">{issue.suggestion}</span>
+                            </div>
 
-                          <p className="text-[11px] text-[#646B81]">{issue.explanation}</p>
-                        </div>
-                      ))}
+                            <p className="text-[11px] text-[#646B81]">{issue.explanation}</p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </>
                 )}

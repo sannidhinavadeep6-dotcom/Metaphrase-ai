@@ -151,8 +151,34 @@ export default function AiHumanizerTool({ user, showToast, initialText = '' }) {
 
             {outputText ? (
               <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+                  <span className="font-bold text-gray-700">Humanization Highlights:</span>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span className="w-2.5 h-2.5 rounded-xs bg-yellow-200 border border-yellow-400 inline-block"></span>
+                    <span className="text-yellow-950 font-semibold">Yellow: Injected Human Phrasing & High-Burstiness Syntax</span>
+                  </div>
+                </div>
+
                 <div className="text-[#1C1C1C] text-sm sm:text-base leading-relaxed whitespace-pre-wrap font-medium p-4 bg-white rounded-2xl border border-emerald-200 shadow-2xs">
-                  {outputText}
+                  {(() => {
+                    const inWords = new Set(inputText.toLowerCase().split(/\s+/).map(w => w.replace(/^[^\w]+|[^\w]+$/g, '')));
+                    return outputText.split(/(\s+)/).map((token, idx) => {
+                      const cleanToken = token.toLowerCase().replace(/^[^\w]+|[^\w]+$/g, '');
+                      const isNewWord = /\S/.test(token) && cleanToken && !inWords.has(cleanToken);
+                      if (isNewWord) {
+                        return (
+                          <span
+                            key={idx}
+                            className="bg-yellow-200 text-yellow-950 font-semibold px-1 py-0.5 rounded-sm border border-yellow-300 shadow-2xs mx-0.5 inline-block"
+                            title="Organic human phrasing injected"
+                          >
+                            {token}
+                          </span>
+                        );
+                      }
+                      return <span key={idx}>{token}</span>;
+                    });
+                  })()}
                 </div>
 
                 {stats && (
