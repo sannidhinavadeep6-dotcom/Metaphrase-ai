@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { 
   X, 
   UploadCloud, 
@@ -11,11 +11,105 @@ import {
   Layers, 
   AlertCircle,
   FileCode,
-  FileSpreadsheet
+  FileSpreadsheet,
+  GitCompare,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { uploadBatchDocument, downloadDocx } from '../services/api';
 
 const SUPPORTED_EXTS = ['pdf', 'docx', 'doc', 'txt', 'md', 'rtf', 'csv', 'json', 'html', 'rst', 'log', 'tsv'];
+
+/**
+ * Robust Word-level LCS Diff Engine
+ * Accurately detects and maps modified vs unchanged words across paragraphs
+ */
+function computeWordDiff(origText = '', paraText = '') {
+  if (!origText && !paraText) {
+    return { origTokens: [], paraTokens: [], changedWords: 0, totalParaWords: 0, changeRate: 0 };
+  }
+
+  // Tokenize preserving spaces, tabs and newlines
+  const oRaw = (origText || '').split(/(\s+)/);
+  const pRaw = (paraText || '').split(/(\s+)/);
+
+  const cleanWord = (w) => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+
+  const oWords = [];
+  const oWordIdxMap = [];
+  oRaw.forEach((token, idx) => {
+    if (/\S/.test(token)) {
+      oWords.push(cleanWord(token));
+      oWordIdxMap.push(idx);
+    }
+  });
+
+  const pWords = [];
+  const pWordIdxMap = [];
+  pRaw.forEach((token, idx) => {
+    if (/\S/.test(token)) {
+      pWords.push(cleanWord(token));
+      pWordIdxMap.push(idx);
+    }
+  });
+
+  const N = Math.min(oWords.length, 3000);
+  const M = Math.min(pWords.length, 3000);
+
+  // Dynamic programming LCS table
+  const dp = Array.from({ length: N + 1 }, () => new Uint16Array(M + 1));
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < M; j++) {
+      if (oWords[i] && oWords[i] === pWords[j]) {
+        dp[i + 1][j + 1] = dp[i][j] + 1;
+      } else {
+        dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+  }
+
+  // Backtrack matched indices
+  const oMatched = new Set();
+  const pMatched = new Set();
+  let i = N, j = M;
+  while (i > 0 && j > 0) {
+    if (oWords[i - 1] && oWords[i - 1] === pWords[j - 1] && dp[i][j] === dp[i - 1][j - 1] + 1) {
+      oMatched.add(oWordIdxMap[i - 1]);
+      pMatched.add(pWordIdxMap[j - 1]);
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  // Generate tokens with diff status
+  const origTokens = oRaw.map((text, idx) => {
+    const isWord = /\S/.test(text);
+    const isDiff = isWord && !oMatched.has(idx);
+    return { text, isWord, isDiff };
+  });
+
+  const paraTokens = pRaw.map((text, idx) => {
+    const isWord = /\S/.test(text);
+    const isDiff = isWord && !pMatched.has(idx);
+    return { text, isWord, isDiff };
+  });
+
+  const changedWords = paraTokens.filter(t => t.isDiff).length;
+  const totalParaWords = pWords.length;
+  const changeRate = totalParaWords > 0 ? Math.round((changedWords / totalParaWords) * 100) : 0;
+
+  return {
+    origTokens,
+    paraTokens,
+    changedWords,
+    totalParaWords,
+    changeRate
+  };
+}
 
 export default function BatchProcessingModal({ 
   onClose, 
@@ -30,7 +124,27 @@ export default function BatchProcessingModal({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [showHighlightDiff, setShowHighlightDiff] = useState(true);
   const fileInputRef = useRef(null);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        if (onClose) onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Compute word diff tokens when result arrives
+  const diffData = useMemo(() => {
+    if (!result?.original_text || !result?.paraphrased_text) {
+      return null;
+    }
+    return computeWordDiff(result.original_text, result.paraphrased_text);
+  }, [result]);
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
@@ -128,9 +242,14 @@ export default function BatchProcessingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111625]/60 backdrop-blur-xs animate-fadeIn">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#111625]/60 backdrop-blur-xs animate-fadeIn cursor-pointer"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
       <div 
-        className="bg-white max-w-3xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E6E6E9] relative max-h-[90vh] overflow-y-auto"
+        className="bg-white max-w-4xl w-full rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E6E6E9] relative max-h-[92vh] overflow-y-auto cursor-default"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -147,6 +266,7 @@ export default function BatchProcessingModal({
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
@@ -272,10 +392,11 @@ export default function BatchProcessingModal({
 
         {/* Result View */}
         {result && (
-          <div className="mt-6 space-y-6 animate-fadeIn">
-            <div className="p-4 rounded-2xl bg-[#E6F5F2] border border-emerald-200 flex items-center justify-between">
+          <div className="mt-6 space-y-5 animate-fadeIn">
+            {/* Header Status & Downloads */}
+            <div className="p-4 rounded-2xl bg-[#E6F5F2] border border-emerald-200 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-full bg-[#027E6F] text-white flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-[#027E6F] text-white flex items-center justify-center shrink-0 shadow-2xs">
                   <Check className="w-4 h-4" />
                 </div>
                 <div>
@@ -284,6 +405,11 @@ export default function BatchProcessingModal({
                   </span>
                   <div className="text-[11px] text-emerald-800">
                     Tone: <strong>{result.tone}</strong> &bull; Language: <strong>{result.target_language}</strong>
+                    {diffData && (
+                      <span className="ml-2 font-semibold text-emerald-900">
+                        &bull; {diffData.changeRate}% vocabulary rephrased
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -306,23 +432,95 @@ export default function BatchProcessingModal({
               </div>
             </div>
 
-            {/* Side by side comparison */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200">
-                <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Original Document Text</div>
-                <div className="text-xs text-[#1C1C1C] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed">
-                  {result.original_text}
-                </div>
+            {/* Difference Highlighting Controls & Legend */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowHighlightDiff(!showHighlightDiff)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer border ${
+                    showHighlightDiff 
+                      ? 'bg-[#027E6F] text-white border-[#027E6F] shadow-2xs' 
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                  }`}
+                >
+                  {showHighlightDiff ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span>{showHighlightDiff ? 'Diff Highlighting Active' : 'Diff Highlighting Off'}</span>
+                </button>
+                <span className="text-gray-400 hidden sm:inline">|</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-white border border-[#027E6F]/30 shadow-2xs">
-                <div className="text-xs font-bold uppercase tracking-wider text-[#027E6F] mb-2">Paraphrased Output</div>
-                <div className="text-xs text-[#1C1C1C] max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed font-medium">
-                  {result.paraphrased_text}
+              {/* Color Code Legend */}
+              <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-xs bg-red-100 border border-red-300 inline-block"></span>
+                  <span className="text-gray-700 font-medium">Light Red: Replaced/Removed</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-xs bg-yellow-200 border border-yellow-400 inline-block"></span>
+                  <span className="text-gray-700 font-medium">Yellow: Changed/Paraphrased</span>
                 </div>
               </div>
             </div>
 
+            {/* Side-by-side comparison with Colored Diff Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Original Document Text Column */}
+              <div className="p-4 rounded-2xl bg-[#F9F9FB] border border-gray-200 flex flex-col">
+                <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2.5 flex items-center justify-between">
+                  <span>Original Document Text</span>
+                  <span className="text-[10px] text-gray-400 font-mono">Source</span>
+                </div>
+                <div className="text-xs text-[#1C1C1C] max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed flex-1">
+                  {showHighlightDiff && diffData ? (
+                    diffData.origTokens.map((item, idx) => (
+                      item.isDiff ? (
+                        <span 
+                          key={idx} 
+                          className="bg-red-100/90 text-red-900 border border-red-200 px-1 py-0.5 rounded-sm mx-0.5 inline-block"
+                          title="Original phrasing replaced"
+                        >
+                          {item.text}
+                        </span>
+                      ) : (
+                        <span key={idx}>{item.text}</span>
+                      )
+                    ))
+                  ) : (
+                    result.original_text
+                  )}
+                </div>
+              </div>
+
+              {/* Paraphrased Output Column */}
+              <div className="p-4 rounded-2xl bg-white border border-[#027E6F]/30 shadow-2xs flex flex-col">
+                <div className="text-xs font-bold uppercase tracking-wider text-[#027E6F] mb-2.5 flex items-center justify-between">
+                  <span>Paraphrased Output</span>
+                  <span className="text-[10px] text-[#027E6F] font-mono font-bold">Transformed</span>
+                </div>
+                <div className="text-xs text-[#1C1C1C] max-h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed font-medium flex-1">
+                  {showHighlightDiff && diffData ? (
+                    diffData.paraTokens.map((item, idx) => (
+                      item.isDiff ? (
+                        <span 
+                          key={idx} 
+                          className="bg-yellow-200 text-yellow-950 border border-yellow-300 px-1 py-0.5 rounded-sm font-semibold mx-0.5 inline-block shadow-2xs"
+                          title="Rewritten / AI-Enhanced phrasing"
+                        >
+                          {item.text}
+                        </span>
+                      ) : (
+                        <span key={idx}>{item.text}</span>
+                      )
+                    ))
+                  ) : (
+                    result.paraphrased_text
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Action Buttons */}
             <div className="flex justify-end gap-3 pt-2">
               <button
                 onClick={() => {
@@ -346,3 +544,4 @@ export default function BatchProcessingModal({
     </div>
   );
 }
+
