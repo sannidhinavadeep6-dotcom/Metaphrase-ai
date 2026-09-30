@@ -1,7 +1,7 @@
 import json
 import hashlib
 from google import genai
-from utils.config import get_gemini_api_key
+from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
 
 _client = None
 
@@ -12,11 +12,7 @@ def get_client():
         _client = genai.Client(api_key=api_key)
     return _client
 
-CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash"
-]
+CANDIDATE_MODELS = ACTIVE_GEMINI_MODELS
 
 def analyze_plagiarism(text: str) -> dict:
     """Analyze text for plagiarism risks, web matches, and originality percentage."""

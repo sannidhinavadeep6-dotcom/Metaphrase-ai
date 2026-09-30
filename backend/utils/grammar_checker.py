@@ -1,7 +1,7 @@
 import json
 import re
 from google import genai
-from utils.config import get_gemini_api_key
+from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
 
 _client = None
 
@@ -12,13 +12,7 @@ def get_client():
         _client = genai.Client(api_key=api_key)
     return _client
 
-CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-3.5-flash"
-]
+CANDIDATE_MODELS = ACTIVE_GEMINI_MODELS
 
 def _rule_based_fallback_grammar(text: str) -> dict:
     """Self-healing rule-based grammar and spelling analyzer."""

@@ -1,7 +1,7 @@
 import re
 import math
 from google import genai
-from utils.config import get_gemini_api_key
+from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
 
 _client = None
 
@@ -129,23 +129,24 @@ def humanize_text(text: str, target_language: str = "English") -> str:
 
     prompt += f"\n\nText to Humanize:\n{text.strip()}"
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=prompt,
-            config={
-                "temperature": 0.65,
-                "top_p": 0.95
-            }
-        )
-        if response and response.text:
-            cleaned = response.text.strip()
-            if cleaned.startswith('"""') and cleaned.endswith('"""'):
-                cleaned = cleaned[3:-3].strip()
-            elif cleaned.startswith('"') and cleaned.endswith('"'):
-                cleaned = cleaned[1:-1].strip()
-            return cleaned
-    except Exception as e:
-        print(f"[AI Detector] Humanizer error: {e}")
+    for model_name in ACTIVE_GEMINI_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config={
+                    "temperature": 0.70,
+                    "top_p": 0.95
+                }
+            )
+            if response and response.text:
+                cleaned = response.text.strip()
+                if cleaned.startswith('"""') and cleaned.endswith('"""'):
+                    cleaned = cleaned[3:-3].strip()
+                elif cleaned.startswith('"') and cleaned.endswith('"'):
+                    cleaned = cleaned[1:-1].strip()
+                return cleaned
+        except Exception as e:
+            continue
 
     return text

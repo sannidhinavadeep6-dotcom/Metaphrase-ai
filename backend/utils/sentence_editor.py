@@ -1,6 +1,6 @@
 import json
 from google import genai
-from utils.config import get_gemini_api_key
+from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
 
 _client = None
 
@@ -29,31 +29,32 @@ def generate_sentence_alternatives(sentence: str, full_context: str = "", tone: 
         "Do NOT include markdown formatting, backticks, or extra text."
     )
 
-    try:
-        response = client.models.generate_content(
-            model="gemini-3.5-flash",
-            contents=prompt,
-            config={
-                "temperature": 0.45,
-                "top_p": 0.95
-            }
-        )
-        if response and response.text:
-            text = response.text.strip()
-            # Strip potential ```json wrappers
-            if text.startswith("```"):
-                lines = text.split("\n")
-                if lines[0].startswith("```"):
-                    lines = lines[1:]
-                if lines and lines[-1].startswith("```"):
-                    lines = lines[:-1]
-                text = "\n".join(lines).strip()
-            
-            alternatives = json.loads(text)
-            if isinstance(alternatives, list):
-                return [str(a).strip() for a in alternatives if a][:4]
-    except Exception as e:
-        print(f"[SentenceEditor] Alternative generation error: {e}")
+    for model_name in ACTIVE_GEMINI_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config={
+                    "temperature": 0.65,
+                    "top_p": 0.95
+                }
+            )
+            if response and response.text:
+                text = response.text.strip()
+                # Strip potential ```json wrappers
+                if text.startswith("```"):
+                    lines = text.split("\n")
+                    if lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines and lines[-1].startswith("```"):
+                        lines = lines[:-1]
+                    text = "\n".join(lines).strip()
+                
+                alternatives = json.loads(text)
+                if isinstance(alternatives, list):
+                    return [str(a).strip() for a in alternatives if a][:4]
+        except Exception as e:
+            continue
 
     # Fallback heuristic alternatives if JSON parsing failed
     return [

@@ -1,7 +1,15 @@
 import os
 import json
+from pathlib import Path
 from dotenv import load_dotenv
 
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent.parent
+BACKEND_DIR = BASE_DIR.parent
+
+for p in [ROOT_DIR / ".env", BACKEND_DIR / ".env", Path.cwd() / ".env"]:
+    if p.exists():
+        load_dotenv(p)
 load_dotenv()
 
 def get_gemini_api_key() -> str:
@@ -43,3 +51,15 @@ def mask_credential(key: str) -> str:
     if not key or len(key) < 8:
         return "********"
     return f"{key[:4]}...{key[-4:]}"
+
+ACTIVE_GEMINI_MODELS = [
+    "gemini-3.7-flash",
+    "gemini-flash-lite-latest",
+    "gemini-flash-latest",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-pro-latest"
+]
