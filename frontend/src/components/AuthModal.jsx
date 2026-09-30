@@ -308,7 +308,11 @@ export default function AuthModal({
 
         {/* Form */}
         {tab === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} autoComplete="off" className="space-y-4">
+            {/* Hidden dummy input to deter aggressive browser password managers */}
+            <input type="text" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+            <input type="password" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                 Email
@@ -317,7 +321,10 @@ export default function AuthModal({
                 <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                 <input
                   type="email"
+                  name="user_login_email"
+                  id="user_login_email"
                   required
+                  autoComplete="off"
                   value={loginEmail}
                   onChange={(e) => { setLoginEmail(e.target.value); setErrorMsg(''); }}
                   placeholder="Enter your email"
@@ -334,7 +341,10 @@ export default function AuthModal({
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="user_login_password"
+                  id="user_login_password"
                   required
+                  autoComplete="new-password"
                   value={loginPassword}
                   onChange={(e) => { setLoginPassword(e.target.value); setErrorMsg(''); }}
                   placeholder="Enter your password"
@@ -368,7 +378,11 @@ export default function AuthModal({
           </form>
         ) : (
           /* Register Form */
-          <form onSubmit={handleRegister} className="space-y-3.5">
+          <form onSubmit={handleRegister} autoComplete="off" className="space-y-3.5">
+            {/* Hidden dummy input to deter aggressive browser password managers */}
+            <input type="text" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+            <input type="password" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
                 Full Name
@@ -377,7 +391,10 @@ export default function AuthModal({
                 <User className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
+                  name="user_reg_fullname"
+                  id="user_reg_fullname"
                   required
+                  autoComplete="off"
                   value={regName}
                   onChange={(e) => { setRegName(e.target.value); setErrorMsg(''); }}
                   placeholder="e.g. Alex Johnson"
@@ -394,7 +411,10 @@ export default function AuthModal({
                 <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                 <input
                   type="email"
+                  name="user_reg_email"
+                  id="user_reg_email"
                   required
+                  autoComplete="off"
                   value={regEmail}
                   onChange={(e) => { setRegEmail(e.target.value); setErrorMsg(''); }}
                   placeholder="name@example.com"
@@ -411,7 +431,10 @@ export default function AuthModal({
                 <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-3" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  name="user_reg_password"
+                  id="user_reg_password"
                   required
+                  autoComplete="new-password"
                   value={regPassword}
                   onChange={(e) => { setRegPassword(e.target.value); setErrorMsg(''); }}
                   placeholder="At least 6 characters"
