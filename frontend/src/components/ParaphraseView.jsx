@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Sparkles, 
   Upload, 
@@ -16,7 +16,9 @@ import {
   Globe,
   Sliders,
   ShieldCheck,
-  FileText
+  FileText,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -26,6 +28,84 @@ const TONES = [
   { id: 'Academic', label: 'Academic & Formal', icon: '🎓' },
   { id: 'Executive', label: 'Executive & Concise', icon: '💼' }
 ];
+
+/**
+ * Word-level Diff Engine for Paraphrased Output Highlighting
+ */
+function computeOutputWordDiff(origText = '', paraText = '') {
+  if (!origText || !paraText) {
+    const raw = (paraText || '').split(/(\s+)/);
+    return {
+      tokens: raw.map((t, idx) => ({ id: idx, text: t, isDiff: false, isWord: /\S/.test(t) })),
+      changedCount: 0,
+      totalWords: 0
+    };
+  }
+
+  const oRaw = origText.split(/(\s+)/);
+  const pRaw = paraText.split(/(\s+)/);
+
+  const cleanWord = (w) => w.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '');
+
+  const oWords = [];
+  const oWordIdxMap = [];
+  oRaw.forEach((token, idx) => {
+    if (/\S/.test(token)) {
+      oWords.push(cleanWord(token));
+      oWordIdxMap.push(idx);
+    }
+  });
+
+  const pWords = [];
+  const pWordIdxMap = [];
+  pRaw.forEach((token, idx) => {
+    if (/\S/.test(token)) {
+      pWords.push(cleanWord(token));
+      pWordIdxMap.push(idx);
+    }
+  });
+
+  const N = Math.min(oWords.length, 3000);
+  const M = Math.min(pWords.length, 3000);
+
+  const dp = Array.from({ length: N + 1 }, () => new Uint16Array(M + 1));
+  for (let i = 0; i < N; i++) {
+    for (let j = 0; j < M; j++) {
+      if (oWords[i] && oWords[i] === pWords[j]) {
+        dp[i + 1][j + 1] = dp[i][j] + 1;
+      } else {
+        dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+      }
+    }
+  }
+
+  const pMatched = new Set();
+  let i = N, j = M;
+  while (i > 0 && j > 0) {
+    if (oWords[i - 1] && oWords[i - 1] === pWords[j - 1] && dp[i][j] === dp[i - 1][j - 1] + 1) {
+      pMatched.add(pWordIdxMap[j - 1]);
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      i--;
+    } else {
+      j--;
+    }
+  }
+
+  const tokens = pRaw.map((text, idx) => {
+    const isWord = /\S/.test(text);
+    const isDiff = isWord && !pMatched.has(idx);
+    return { id: idx, text, isWord, isDiff };
+  });
+
+  const changedCount = tokens.filter(t => t.isDiff).length;
+  return {
+    tokens,
+    changedCount,
+    totalWords: pWords.length
+  };
+}
 
 export default function ParaphraseView({
   inputText,
@@ -58,11 +138,18 @@ export default function ParaphraseView({
 }) {
   const [copied, setCopied] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [showHighlightDiff, setShowHighlightDiff] = useState(true);
   const fileInputRef = useRef(null);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const charCount = inputText.length;
   const outputWordCount = outputText.trim() ? outputText.trim().split(/\s+/).length : 0;
+
+  // Word-level diff calculation between source and output
+  const diffData = useMemo(() => {
+    if (!inputText || !outputText) return null;
+    return computeOutputWordDiff(inputText, outputText);
+  }, [inputText, outputText]);
 
   // Handle Copy with Confetti
   const handleCopy = () => {
@@ -279,7 +366,7 @@ export default function ParaphraseView({
         <div className="flex flex-col h-full p-5 sm:p-6 justify-between bg-white relative">
           
           {/* Header Row */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-100 mb-2">
+          <div className="flex flex-wrap items-center justify-between pb-3 border-b border-gray-100 mb-2 gap-2">
             <div className="flex items-center gap-2">
               <span className="text-lg">🎭</span>
               <span className="font-semibold text-[15px] text-[#3E4049]">Paraphrased Text</span>
@@ -290,10 +377,26 @@ export default function ParaphraseView({
               )}
             </div>
 
-            {/* Output word count badge if populated */}
+            {/* Output word count & Diff Toggle */}
             {outputText && (
-              <div className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded">
-                {outputWordCount} words
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowHighlightDiff(!showHighlightDiff)}
+                  className={`flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer shadow-2xs ${
+                    showHighlightDiff 
+                      ? 'bg-yellow-100 text-yellow-950 border-yellow-300 hover:bg-yellow-200' 
+                      : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                  }`}
+                  title="Toggle colored word diff highlighting"
+                >
+                  <Sparkles className="w-3 h-3 text-amber-600" />
+                  <span>{showHighlightDiff ? 'Diff Highlights: On' : 'Diff Highlights: Off'}</span>
+                </button>
+
+                <div className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                  {outputWordCount} words
+                </div>
               </div>
             )}
           </div>
@@ -308,17 +411,35 @@ export default function ParaphraseView({
               </div>
             ) : outputText ? (
               <div className="text-[#1C1C1C] text-[16px] leading-relaxed select-text space-y-2 animate-fadeIn">
-                {/* Sentence click highlighting for alternative suggestions */}
-                {outputText.split(/(?<=[.?!])\s+/).map((sentence, idx) => (
-                  <span
-                    key={idx}
-                    onClick={() => onSentenceClick && onSentenceClick(sentence)}
-                    className="hover:bg-emerald-50 hover:text-emerald-950 transition-colors rounded px-1 py-0.5 cursor-pointer inline-block"
-                    title="Click sentence to explore alternative rewrites & synonyms"
-                  >
-                    {sentence}{' '}
-                  </span>
-                ))}
+                {showHighlightDiff && diffData ? (
+                  <div className="leading-relaxed">
+                    {diffData.tokens.map((token, idx) => (
+                      token.isDiff ? (
+                        <span
+                          key={idx}
+                          onClick={() => onSentenceClick && onSentenceClick(outputText)}
+                          className="bg-yellow-200 text-yellow-950 font-semibold px-1 py-0.5 rounded-sm border border-yellow-300 shadow-2xs mx-0.5 inline-block cursor-pointer hover:bg-yellow-300 transition-colors"
+                          title="Rewritten by AI — Click to explore alternative phrases"
+                        >
+                          {token.text}
+                        </span>
+                      ) : (
+                        <span key={idx}>{token.text}</span>
+                      )
+                    ))}
+                  </div>
+                ) : (
+                  outputText.split(/(?<=[.?!])\s+/).map((sentence, idx) => (
+                    <span
+                      key={idx}
+                      onClick={() => onSentenceClick && onSentenceClick(sentence)}
+                      className="hover:bg-emerald-50 hover:text-emerald-950 transition-colors rounded px-1 py-0.5 cursor-pointer inline-block"
+                      title="Click sentence to explore alternative rewrites & synonyms"
+                    >
+                      {sentence}{' '}
+                    </span>
+                  ))
+                )}
               </div>
             ) : (
               /* Grammarly Exact SVG Illustration: Notebook + Pencil */
