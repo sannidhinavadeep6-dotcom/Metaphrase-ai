@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Search, 
   RotateCcw, 
@@ -9,17 +9,44 @@ import {
   Sliders, 
   Cpu, 
   UserCheck, 
-  Shield 
+  Shield,
+  Upload,
+  Edit3,
+  Eye,
+  Sparkles
 } from 'lucide-react';
-import { checkAiDetection } from '../../services/api';
+import { checkAiDetection, extractDocumentText } from '../../services/api';
 
 export default function AiDetectorTool({ user, showToast, onSwitchToHumanizer }) {
   const [inputText, setInputText] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [viewMode, setViewMode] = useState('editor'); // 'editor' | 'scan'
+  const fileInputRef = useRef(null);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const charCount = inputText.length;
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const data = await extractDocumentText(file, user?.email);
+      if (data.text) {
+        setInputText(data.text);
+        setResult(null);
+        setViewMode('editor');
+        showToast?.(`Extracted ${file.name} successfully!`, 'success');
+      }
+    } catch (err) {
+      showToast?.(err.message || 'Failed to extract text from file.', 'error');
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleScan = async () => {
     if (!inputText.trim()) {
@@ -30,6 +57,7 @@ export default function AiDetectorTool({ user, showToast, onSwitchToHumanizer })
     try {
       const data = await checkAiDetection(inputText, user?.email);
       setResult(data);
+      setViewMode('scan');
       showToast?.(`AI Detection analysis complete! AI Risk: ${data.ai_probability}%`, 'success');
     } catch (err) {
       showToast?.(err.message || 'AI detection failed.', 'error');
@@ -44,8 +72,8 @@ export default function AiDetectorTool({ user, showToast, onSwitchToHumanizer })
     <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-[1280px] mx-auto animate-fadeIn">
       {/* Title */}
       <div className="text-center max-w-3xl mx-auto mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E6F5F2] text-[#027E6F] mb-3">
-          <div className="w-4 h-4 rounded-full border-2 border-[#027E6F] flex items-center justify-center text-[9px] font-extrabold text-[#027E6F]">Q</div>
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-purple-50 text-purple-800 border border-purple-200 mb-3 shadow-2xs">
+          <div className="w-4 h-4 rounded-full border-2 border-purple-700 flex items-center justify-center text-[9px] font-extrabold text-purple-700">Q</div>
           <span>Free AI Content Detector</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1C1C1C] tracking-tight mb-2">
@@ -61,22 +89,68 @@ export default function AiDetectorTool({ user, showToast, onSwitchToHumanizer })
         {/* Left: Input Textarea */}
         <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E6E6E9]">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-                <Cpu className="w-4 h-4 text-[#027E6F]" />
-                <span>Text to Analyze</span>
-              </span>
-              {!inputText && (
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                  <Cpu className="w-4 h-4 text-purple-600" />
+                  <span>Text to Analyze</span>
+                </span>
+                {result && (
+                  <div className="inline-flex p-0.5 bg-gray-100 rounded-lg border border-gray-200 text-xs">
+                    <button
+                      onClick={() => setViewMode('editor')}
+                      className={`px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                        viewMode === 'editor' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('scan')}
+                      className={`px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                        viewMode === 'scan' ? 'bg-white text-purple-700 shadow-2xs font-bold' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Scan View</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.doc,.txt,.md,.rtf,.csv"
+                  className="hidden"
+                />
                 <button
-                  onClick={() => setInputText(sampleAiText)}
-                  className="text-xs text-[#027E6F] hover:underline font-semibold cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingDoc}
+                  className="text-xs text-purple-700 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                 >
-                  Try Sample AI Text
+                  <Upload className="w-3 h-3" />
+                  <span>{uploadingDoc ? 'Uploading...' : 'Upload Doc/PDF'}</span>
                 </button>
-              )}
+                {!inputText && (
+                  <button
+                    onClick={() => {
+                      setInputText(sampleAiText);
+                      setResult(null);
+                      setViewMode('editor');
+                    }}
+                    className="text-xs text-purple-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Try Sample
+                  </button>
+                )}
+              </div>
             </div>
 
-            {result ? (
+            {result && viewMode === 'scan' ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
                   <span className="font-bold text-gray-700">AI Risk Highlights:</span>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   CheckCircle2, 
   Sparkles, 
@@ -10,19 +10,44 @@ import {
   Wand2,
   FileCheck,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Edit3,
+  Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { checkGrammar } from '../../services/api';
+import { checkGrammar, extractDocumentText } from '../../services/api';
 
 export default function GrammarCheckerTool({ user, showToast }) {
   const [inputText, setInputText] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState('editor'); // 'editor' | 'scan'
+  const fileInputRef = useRef(null);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const charCount = inputText.length;
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const data = await extractDocumentText(file, user?.email);
+      if (data.text) {
+        setInputText(data.text);
+        setResult(null);
+        setViewMode('editor');
+        showToast?.(`Extracted ${file.name} successfully!`, 'success');
+      }
+    } catch (err) {
+      showToast?.(err.message || 'Failed to extract text from file.', 'error');
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleCheck = async () => {
     if (!inputText.trim()) {
@@ -33,6 +58,7 @@ export default function GrammarCheckerTool({ user, showToast }) {
     try {
       const data = await checkGrammar(inputText, user?.email);
       setResult(data);
+      setViewMode('scan');
       showToast?.(`Grammar scan complete! Score: ${data.score}/100`, 'success');
     } catch (err) {
       showToast?.(err.message || 'Grammar check failed.', 'error');
@@ -98,24 +124,68 @@ export default function GrammarCheckerTool({ user, showToast }) {
         {/* Left: Input Textarea */}
         <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E6E6E9]">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-                <FileCheck className="w-4 h-4 text-[#027E6F]" />
-                <span>Input Text</span>
-              </span>
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+                  <FileCheck className="w-4 h-4 text-[#027E6F]" />
+                  <span>Input Text</span>
+                </span>
+                {result && (
+                  <div className="inline-flex p-0.5 bg-gray-100 rounded-lg border border-gray-200 text-xs">
+                    <button
+                      onClick={() => setViewMode('editor')}
+                      className={`px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                        viewMode === 'editor' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <Edit3 className="w-3 h-3" />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('scan')}
+                      className={`px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 cursor-pointer transition-all ${
+                        viewMode === 'scan' ? 'bg-white text-[#027E6F] shadow-2xs font-bold' : 'text-gray-500 hover:text-gray-800'
+                      }`}
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Scan View</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.doc,.txt,.md,.rtf,.csv"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingDoc}
+                  className="text-xs text-[#027E6F] hover:text-[#006356] bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>{uploadingDoc ? 'Uploading...' : 'Upload Doc/PDF'}</span>
+                </button>
                 {!inputText && (
                   <button
-                    onClick={() => setInputText(sampleGrammarText)}
+                    onClick={() => {
+                      setInputText(sampleGrammarText);
+                      setResult(null);
+                      setViewMode('editor');
+                    }}
                     className="text-xs text-[#027E6F] hover:underline font-semibold cursor-pointer"
                   >
-                    Try Sample Text
+                    Try Sample
                   </button>
                 )}
               </div>
             </div>
 
-            {result && result.issues?.length > 0 ? (
+            {result && viewMode === 'scan' && result.issues?.length > 0 ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gray-50 border border-gray-200 text-xs">
                   <span className="font-bold text-gray-700">Issue Color Codes:</span>
