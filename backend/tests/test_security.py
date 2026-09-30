@@ -8,9 +8,9 @@ def test_bcrypt_hashing_and_salting():
     hash1 = hash_password(pw)
     hash2 = hash_password(pw)
     
-    # Hashes must start with bcrypt identifier
-    assert hash1.startswith("$2b$") or hash1.startswith("$2a$")
-    assert hash2.startswith("$2b$") or hash2.startswith("$2a$")
+    # Hashes must start with bcrypt or pbkdf2 identifier
+    assert hash1.startswith("$2b$") or hash1.startswith("$2a$") or hash1.startswith("pbkdf2$")
+    assert hash2.startswith("$2b$") or hash2.startswith("$2a$") or hash2.startswith("pbkdf2$")
     
     # Salts ensure identical passwords produce distinct hashes
     assert hash1 != hash2

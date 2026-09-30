@@ -24,6 +24,7 @@ import docx
 import database
 from utils.ai_generator import (
     generate_paraphrase, 
+    translate_text,
     TONE_PROFILES, 
     SUPPORTED_LANGUAGES
 )
@@ -819,11 +820,10 @@ async def translate_endpoint(req: TranslateRequest):
         raise HTTPException(status_code=400, detail="Text cannot be empty.")
         
     translated = await asyncio.to_thread(
-        generate_paraphrase,
+        translate_text,
         req.text,
-        "Fluent",
-        f"Translate the text faithfully into {req.target_language} with high natural fluency and proper grammatical syntax.",
-        req.target_language
+        req.target_language,
+        req.source_language or "Auto-detect"
     )
     
     if req.email:

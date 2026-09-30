@@ -104,49 +104,147 @@ def analyze_ai_probability(text: str) -> dict:
         "markers_found": found_markers
     }
 
+def _offline_humanize_fallback(text: str) -> str:
+    """Local offline humanizer rule-set when cloud connectivity is impaired."""
+    replacements = {
+        "furthermore": "also",
+        "moreover": "in addition",
+        "in conclusion": "to wrap up",
+        "it is important to note": "notably",
+        "delve into": "explore",
+        "tapestry": "range",
+        "multifaceted": "varied",
+        "paramount": "vital",
+        "beacon": "model",
+        "testament": "proof",
+        "crucial role": "key part",
+        "revolutionize": "reshape",
+        "pivotal": "central",
+        "underscores": "highlights",
+        "fosters": "builds",
+        "dynamic landscape": "changing environment",
+        "in summary": "overall",
+        "utilize": "use",
+        "facilitate": "help",
+        "leverage": "use",
+        "demonstrate": "show",
+        "subsequently": "then",
+        "approximately": "about",
+        "commence": "start",
+        "terminate": "end",
+        "endeavor": "effort",
+        "optimize": "improve",
+        "implement": "set up",
+        "ascertain": "check",
+        "comprehend": "understand"
+    }
+    lines = text.split("\n")
+    transformed_lines = []
+    for line in lines:
+        if not line.strip():
+            transformed_lines.append(line)
+            continue
+        words = line.split(" ")
+        new_words = []
+        for w in words:
+            clean_w = w.lower().strip(".,!?;:\"'()[]{}")
+            if clean_w in replacements:
+                rep = replacements[clean_w]
+                if w and w[0].isupper():
+                    rep = rep.capitalize()
+                prefix = ""
+                for char in w:
+                    if char in ".,!?;:\"'([]{}":
+                        prefix += char
+                    else:
+                        break
+                suffix = ""
+                for char in reversed(w):
+                    if char in ".,!?;:\"'([]{}":
+                        suffix = char + suffix
+                    else:
+                        break
+                new_words.append(prefix + rep + suffix)
+            else:
+                new_words.append(w)
+        transformed_lines.append(" ".join(new_words))
+    return "\n".join(transformed_lines)
+
 def humanize_text(text: str, target_language: str = "English") -> str:
     """
     Transforms rigid/synthetic prose into natural, rhythmic, and authentic human-sounding text.
     Intentionally varies sentence lengths, removes cliché transition words, and injects active cadence.
+    Handles long paragraphs and whole document files with chunking.
     """
-    if not text or not text.strip():
+    clean_text = (text or "").strip()
+    if not clean_text:
         return ""
 
+    # Split into chunks of ~1200 words if document is very large
+    paragraphs = [p for p in clean_text.split("\n\n") if p.strip()]
+    if not paragraphs:
+        paragraphs = [clean_text]
+
+    chunks = []
+    current_chunk = []
+    current_len = 0
+    for p in paragraphs:
+        p_len = len(p.split())
+        if current_len + p_len > 600 and current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk = [p]
+            current_len = p_len
+        else:
+            current_chunk.append(p)
+            current_len += p_len
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+
     client = get_client()
-    prompt = (
-        "You are an expert human editor and master of organic writing. "
-        "Your task is to HUMANIZE the following text so it sounds 100% natural, expressive, and authentically human. "
-        "CRITICAL HUMANIZATION RULES:\n"
-        "1. Inject high burstiness: Mix punchy short sentences with natural, longer descriptive clauses.\n"
-        "2. Strip all AI buzzwords and robotic fillers (e.g. 'Furthermore', 'Moreover', 'In summary', 'It is crucial to note', 'delve into', 'tapestry').\n"
-        "3. Use direct, active voice and organic conversational cadence.\n"
-        "4. Preserve 100% of the core factual meaning and message.\n"
-        "5. Output ONLY the humanized prose without any commentary, markdown labels, or introductory text."
-    )
+    humanized_chunks = []
 
-    if target_language and target_language.lower() != "english":
-        prompt += f"\n6. Output language: Express the final humanized text naturally in {target_language}."
+    for chunk in chunks:
+        prompt = (
+            "You are an elite human ghostwriter and master of natural English prose. "
+            "Your task is to completely HUMANIZE the following text so that it reads 100% like it was written by an expressive human author, effortlessly bypassing AI content detectors.\n\n"
+            "CRITICAL HUMANIZATION DIRECTIVES:\n"
+            "1. VARY SENTENCE LENGTH & RHYTHM: Inject strong burstiness. Mix short, punchy 4-7 word sentences with longer, flowing explanatory thoughts.\n"
+            "2. BANISH AI BUZZWORDS & CLICHÉS: Strip all robotic fillers ('delve into', 'tapestry', 'furthermore', 'moreover', 'testament', 'in summary', 'multifaceted', 'pivotal role', 'crucial', 'underscores', 'fosters').\n"
+            "3. ACTIVE & CONVERSATIONAL VOICE: Use direct, energetic phrasing, natural idioms, and authentic human vocabulary.\n"
+            "4. 100% FACTUAL FIDELITY: Keep all factual information, data points, citations, names, and original intent intact.\n"
+            "5. OUTPUT FORMAT: Return ONLY the final humanized text without quotation marks, introduction, or commentary."
+        )
 
-    prompt += f"\n\nText to Humanize:\n{text.strip()}"
+        if target_language and target_language.lower() != "english":
+            prompt += f"\n6. TARGET LANGUAGE: Deliver the final humanized output naturally in {target_language}."
 
-    for model_name in ACTIVE_GEMINI_MODELS:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config={
-                    "temperature": 0.70,
-                    "top_p": 0.95
-                }
-            )
-            if response and response.text:
-                cleaned = response.text.strip()
-                if cleaned.startswith('"""') and cleaned.endswith('"""'):
-                    cleaned = cleaned[3:-3].strip()
-                elif cleaned.startswith('"') and cleaned.endswith('"'):
-                    cleaned = cleaned[1:-1].strip()
-                return cleaned
-        except Exception as e:
-            continue
+        prompt += f"\n\nText to Humanize:\n{chunk.strip()}"
 
-    return text
+        chunk_result = None
+        for model_name in ACTIVE_GEMINI_MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config={
+                        "temperature": 0.75,
+                        "top_p": 0.95
+                    }
+                )
+                if response and response.text:
+                    cleaned = response.text.strip()
+                    if cleaned.startswith('"""') and cleaned.endswith('"""'):
+                        cleaned = cleaned[3:-3].strip()
+                    elif cleaned.startswith('"') and cleaned.endswith('"'):
+                        cleaned = cleaned[1:-1].strip()
+                    if cleaned:
+                        chunk_result = cleaned
+                        break
+            except Exception:
+                continue
+
+        if not chunk_result:
+            chunk_result = _offline_humanize_fallback(chunk)
+        humanized_chunks.append(chunk_result)
+
+    return "\n\n".join(humanized_chunks)

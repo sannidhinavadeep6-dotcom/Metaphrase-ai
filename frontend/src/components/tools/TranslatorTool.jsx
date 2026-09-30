@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Globe, 
   ArrowRightLeft, 
@@ -9,10 +9,11 @@ import {
   Volume2, 
   VolumeX, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Upload
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { translateDirect } from '../../services/api';
+import { translateDirect, extractDocumentText } from '../../services/api';
 
 const LANGUAGES = [
   "English",
@@ -35,17 +36,37 @@ export default function TranslatorTool({ user, showToast }) {
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
   const [sourceLang, setSourceLang] = useState('English');
-  const [targetLang, setTargetLang] = useState('French (Français)');
+  const [targetLang, setTargetLang] = useState('Spanish (Español)');
   const [loading, setLoading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const fileInputRef = useRef(null);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const charCount = inputText.length;
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const data = await extractDocumentText(file, user?.email);
+      if (data.text) {
+        setInputText(data.text);
+        showToast?.(`Extracted ${file.name} successfully!`, 'success');
+      }
+    } catch (err) {
+      showToast?.(err.message || 'Failed to extract text from file.', 'error');
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleTranslate = async () => {
     if (!inputText.trim()) {
-      showToast?.('Please enter text to translate.', 'error');
+      showToast?.('Please enter text or upload a document to translate.', 'error');
       return;
     }
     setLoading(true);
@@ -101,8 +122,8 @@ export default function TranslatorTool({ user, showToast }) {
     <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-[1280px] mx-auto animate-fadeIn">
       {/* Title */}
       <div className="text-center max-w-3xl mx-auto mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#E6F5F2] text-[#027E6F] mb-3">
-          <Globe className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200 mb-3 shadow-2xs">
+          <Globe className="w-3.5 h-3.5 text-blue-600" />
           <span>Neural Multilingual Translator</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1C1C1C] tracking-tight mb-2">
@@ -118,32 +139,53 @@ export default function TranslatorTool({ user, showToast }) {
         {/* Left: Source Text */}
         <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E6E6E9]">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <select
-                value={sourceLang}
-                onChange={(e) => setSourceLang(e.target.value)}
-                className="bg-[#F9F9FB] border border-gray-300 text-[#1C1C1C] font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#027E6F] cursor-pointer"
-              >
-                {LANGUAGES.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-
-              {!inputText && (
-                <button
-                  onClick={() => setInputText(sampleTranslation)}
-                  className="text-xs text-[#027E6F] hover:underline font-semibold cursor-pointer"
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">From:</span>
+                <select
+                  value={sourceLang}
+                  onChange={(e) => setSourceLang(e.target.value)}
+                  className="bg-gray-50 border border-gray-300 text-[#1C1C1C] font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-blue-600 cursor-pointer"
                 >
-                  Try Sample Text
+                  <option value="Auto-detect">Auto-detect</option>
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.doc,.txt,.md,.rtf,.csv"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingDoc}
+                  className="text-xs text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>{uploadingDoc ? 'Uploading...' : 'Upload Doc/PDF'}</span>
                 </button>
-              )}
+                {!inputText && (
+                  <button
+                    onClick={() => setInputText(sampleTranslation)}
+                    className="text-xs text-blue-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Try Sample
+                  </button>
+                )}
+              </div>
             </div>
 
             <textarea
               rows={12}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Enter text to translate..."
+              placeholder="Enter text or upload document to translate across languages..."
               className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
             />
           </div>
@@ -166,7 +208,7 @@ export default function TranslatorTool({ user, showToast }) {
               <button
                 onClick={handleTranslate}
                 disabled={loading || !inputText.trim()}
-                className="grammarly-green-btn flex items-center gap-2 px-6 py-2.5 text-sm font-bold shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-sm hover:shadow-md cursor-pointer disabled:opacity-50 transition-all"
               >
                 {loading ? (
                   <>

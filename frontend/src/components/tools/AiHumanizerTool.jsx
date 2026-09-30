@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Sparkles, 
   RotateCcw, 
@@ -9,25 +9,65 @@ import {
   Globe, 
   ArrowRight,
   ShieldCheck,
-  Flame
+  Flame,
+  Upload,
+  FileText,
+  FileCode
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { humanizeText } from '../../services/api';
+import { humanizeText, extractDocumentText } from '../../services/api';
+
+const LANGUAGES = [
+  "English",
+  "Spanish (Español)",
+  "French (Français)",
+  "German (Deutsch)",
+  "Hindi (हिन्दी)",
+  "Telugu (తెలుగు)",
+  "Japanese (日本語)",
+  "Chinese (Simplified)",
+  "Arabic (العربية)",
+  "Portuguese (Português)",
+  "Italian (Italiano)",
+  "Russian (Русский)",
+  "Korean (한국어)",
+  "Dutch (Nederlands)"
+];
 
 export default function AiHumanizerTool({ user, showToast, initialText = '' }) {
   const [inputText, setInputText] = useState(initialText || '');
   const [outputText, setOutputText] = useState('');
   const [targetLang, setTargetLang] = useState('English');
   const [loading, setLoading] = useState(false);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState(null);
+  const fileInputRef = useRef(null);
 
   const wordCount = inputText.trim() ? inputText.trim().split(/\s+/).length : 0;
   const charCount = inputText.length;
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingDoc(true);
+    try {
+      const data = await extractDocumentText(file, user?.email);
+      if (data.text) {
+        setInputText(data.text);
+        showToast?.(`Extracted ${file.name} successfully!`, 'success');
+      }
+    } catch (err) {
+      showToast?.(err.message || 'Failed to extract text from file.', 'error');
+    } finally {
+      setUploadingDoc(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const handleHumanize = async () => {
     if (!inputText.trim()) {
-      showToast?.('Please enter AI-generated text to humanize.', 'error');
+      showToast?.('Please enter AI-generated text or upload a file to humanize.', 'error');
       return;
     }
     setLoading(true);
@@ -58,7 +98,7 @@ export default function AiHumanizerTool({ user, showToast, initialText = '' }) {
     <div className="py-10 px-4 sm:px-6 lg:px-8 max-w-[1280px] mx-auto animate-fadeIn">
       {/* Title */}
       <div className="text-center max-w-3xl mx-auto mb-8">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 mb-3 border border-rose-200">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 mb-3 border border-rose-200 shadow-2xs">
           <div className="w-4 h-4 rounded-full bg-rose-600 text-white flex items-center justify-center text-[9px] font-black">HU</div>
           <span>Bypass AI Detectors (100% Organic Score)</span>
         </div>
@@ -75,25 +115,55 @@ export default function AiHumanizerTool({ user, showToast, initialText = '' }) {
         {/* Left: Input Textarea */}
         <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-[#E6E6E9]">
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
-                AI Generated Input
-              </span>
-              {!inputText && (
-                <button
-                  onClick={() => setInputText(sampleAiProse)}
-                  className="text-xs text-rose-600 hover:underline font-semibold cursor-pointer"
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                  AI Input
+                </span>
+                <select
+                  value={targetLang}
+                  onChange={(e) => setTargetLang(e.target.value)}
+                  className="bg-gray-50 border border-gray-300 text-gray-800 font-semibold text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-rose-500 cursor-pointer"
+                  title="Target output language"
                 >
-                  Try Robotic AI Sample
+                  {LANGUAGES.map((l) => (
+                    <option key={l} value={l}>{l}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.doc,.txt,.md,.rtf,.csv"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingDoc}
+                  className="text-xs text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2.5 py-1 rounded-lg font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>{uploadingDoc ? 'Uploading...' : 'Upload Doc/PDF'}</span>
                 </button>
-              )}
+                {!inputText && (
+                  <button
+                    onClick={() => setInputText(sampleAiProse)}
+                    className="text-xs text-rose-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Try Sample
+                  </button>
+                )}
+              </div>
             </div>
 
             <textarea
               rows={12}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Paste ChatGPT or AI-generated text here to inject natural flow, authentic burstiness, and organic human rhythm..."
+              placeholder="Paste ChatGPT or AI-generated text, or upload a document file to inject natural flow, authentic burstiness, and organic human rhythm..."
               className="w-full text-[#1C1C1C] text-sm sm:text-base leading-relaxed placeholder:text-gray-400 focus:outline-none resize-none bg-transparent"
             />
           </div>

@@ -1,7 +1,11 @@
 import os
 import sqlite3
 import hashlib
-import bcrypt
+try:
+    import bcrypt
+    HAS_BCRYPT = True
+except ImportError:
+    HAS_BCRYPT = False
 import json
 import secrets
 from datetime import datetime
@@ -12,22 +16,35 @@ DEFAULT_DB_PATH = os.path.join(DB_DIR, 'metaphrase_app.db')
 DB_NAME = os.environ.get('DB_PATH', DEFAULT_DB_PATH)
 
 def hash_password(password: str) -> str:
-    """Generates a secure salted bcrypt password hash."""
-    salt = bcrypt.gensalt(rounds=12)
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    """Generates a secure salted password hash (bcrypt if available, PBKDF2/SHA-256 fallback)."""
+    if HAS_BCRYPT:
+        salt = bcrypt.gensalt(rounds=12)
+        return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+    return f"pbkdf2${salt}${key.hex()}"
 
 def verify_password(plain_password: str, stored_hash: str) -> bool:
     """
     Verifies a password against stored hash.
-    Supports salted bcrypt hashes and handles legacy SHA-256 backwards compatibility.
+    Supports salted bcrypt hashes, PBKDF2, and legacy SHA-256 backwards compatibility.
     """
     if not stored_hash or not plain_password:
         return False
 
     # Check for bcrypt hash prefix
-    if stored_hash.startswith('$2b$') or stored_hash.startswith('$2a$') or stored_hash.startswith('$2y$'):
+    if (stored_hash.startswith('$2b$') or stored_hash.startswith('$2a$') or stored_hash.startswith('$2y$')) and HAS_BCRYPT:
         try:
             return bcrypt.checkpw(plain_password.encode('utf-8'), stored_hash.encode('utf-8'))
+        except Exception:
+            return False
+
+    # Check for PBKDF2
+    if stored_hash.startswith('pbkdf2$'):
+        try:
+            _, salt, key_hex = stored_hash.split('$')
+            key = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt.encode('utf-8'), 100000)
+            return secrets.compare_digest(key.hex(), key_hex)
         except Exception:
             return False
 

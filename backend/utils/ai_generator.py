@@ -186,3 +186,78 @@ def generate_paraphrase(text: str, level: str = "Simple", custom_instruction: st
     except Exception as e:
         print(f"CRITICAL RECOVERY: {e}")
         return _offline_fallback_paraphrase(text, level or "Simple")
+
+def translate_text(text: str, target_language: str, source_language: str = "Auto-detect") -> str:
+    """
+    Dedicated neural translation function supporting 14+ languages with paragraph preservation.
+    """
+    clean_text = (text or "").strip()
+    if not clean_text:
+        return ""
+
+    # Normalize language names (e.g. 'Spanish (Español)' -> 'Spanish')
+    target_clean = target_language.split("(")[0].strip() if target_language else "English"
+    source_clean = source_language.split("(")[0].strip() if source_language and source_language != "Auto-detect" else "the source language"
+
+    client = get_client()
+
+    paragraphs = [p for p in clean_text.split("\n\n") if p.strip()]
+    if not paragraphs:
+        paragraphs = [clean_text]
+
+    chunks = []
+    current_chunk = []
+    current_len = 0
+    for p in paragraphs:
+        p_len = len(p.split())
+        if current_len + p_len > 600 and current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk = [p]
+            current_len = p_len
+        else:
+            current_chunk.append(p)
+            current_len += p_len
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+
+    translated_chunks = []
+    for chunk in chunks:
+        prompt = (
+            f"You are a professional polyglot translator and linguist. "
+            f"Translate the following text faithfully and accurately from {source_clean} into {target_clean} ({target_language}).\n\n"
+            f"TRANSLATION RULES:\n"
+            f"1. Provide a natural, highly fluent, and culturally appropriate translation into {target_clean}.\n"
+            f"2. Maintain 100% of the original meaning, tone, nuances, proper nouns, citations, and technical terminology.\n"
+            f"3. Preserve all lists, bullets, formatting, and line breaks.\n"
+            f"4. Output ONLY the translated text in {target_clean}. Do NOT include notes, romanizations, or explanations.\n\n"
+            f"Source Text to Translate:\n{chunk.strip()}"
+        )
+
+        chunk_result = None
+        for model_name in CANDIDATE_MODELS:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config={
+                        "temperature": 0.3,
+                        "top_p": 0.95
+                    }
+                )
+                if response and response.text:
+                    cleaned = response.text.strip()
+                    if cleaned.startswith('"""') and cleaned.endswith('"""'):
+                        cleaned = cleaned[3:-3].strip()
+                    elif cleaned.startswith('"') and cleaned.endswith('"'):
+                        cleaned = cleaned[1:-1].strip()
+                    if cleaned:
+                        chunk_result = cleaned
+                        break
+            except Exception:
+                continue
+
+        if not chunk_result:
+            chunk_result = chunk
+        translated_chunks.append(chunk_result)
+
+    return "\n\n".join(translated_chunks)

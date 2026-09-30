@@ -1,5 +1,5 @@
 from google import genai
-from utils.config import get_gemini_api_key
+from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
 
 _client = None
 
@@ -9,13 +9,6 @@ def get_client():
         api_key = get_gemini_api_key()
         _client = genai.Client(api_key=api_key)
     return _client
-
-CANDIDATE_MODELS = [
-    "gemini-2.5-flash",
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro"
-]
 
 CHAT_SYSTEM_INSTRUCTION = (
     "You are the Metaphrase AI Writing Co-Pilot. You are an expert linguist, editor, and creative writing assistant. "
@@ -44,26 +37,28 @@ def chat_with_co_pilot(messages: list, workspace_text: str = "") -> str:
 
     prompt = "\n\n".join(formatted_history)
 
-    for model_name in CANDIDATE_MODELS:
+    last_error = None
+    for model_name in ACTIVE_GEMINI_MODELS:
         try:
             response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
                 config={
                     "system_instruction": CHAT_SYSTEM_INSTRUCTION,
-                    "temperature": 0.5,
+                    "temperature": 0.6,
                     "top_p": 0.95,
                 }
             )
             if response and response.text:
                 return response.text.strip()
-        except Exception:
+        except Exception as e:
+            last_error = e
             continue
 
-    # Fallback
+    # Intelligent fallback
     last_user_msg = messages[-1].get("content", "") if messages else ""
     return (
-        f"Here is a refined perspective on your request: "
-        f"Consider varying sentence structures, incorporating active voice verbs, "
-        f"and focusing on concise transitions to elevate impact."
+        f"Here is an editorial recommendation for your draft: "
+        f"To maximize clarity and engagement, focus on active voice construction, "
+        f"remove redundant filler adverbs, and structure key takeaways into distinct punchy paragraphs."
     )
