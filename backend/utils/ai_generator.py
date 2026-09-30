@@ -1,4 +1,5 @@
 import os
+import re
 import functools
 from google import genai
 from utils.config import get_gemini_api_key, ACTIVE_GEMINI_MODELS
@@ -189,28 +190,49 @@ def generate_paraphrase(text: str, level: str = "Simple", custom_instruction: st
 
 def translate_text(text: str, target_language: str, source_language: str = "Auto-detect") -> str:
     """
-    Dedicated neural translation function supporting 14+ languages with paragraph preservation.
+    Dedicated neural translation function supporting 14+ languages with sentence & paragraph preservation.
     """
     clean_text = (text or "").strip()
     if not clean_text:
         return ""
 
-    # Normalize language names (e.g. 'Spanish (Español)' -> 'Spanish')
+    # Normalize language names (e.g. 'Spanish (Español)' -> 'Spanish', 'French (Français)' -> 'French')
     target_clean = target_language.split("(")[0].strip() if target_language else "English"
     source_clean = source_language.split("(")[0].strip() if source_language and source_language != "Auto-detect" else "the source language"
 
     client = get_client()
 
-    paragraphs = [p for p in clean_text.split("\n\n") if p.strip()]
-    if not paragraphs:
-        paragraphs = [clean_text]
+    # Split into paragraphs, and split any oversized paragraphs into sentence groups
+    raw_paragraphs = [p for p in re.split(r'\n+', clean_text) if p.strip()]
+    if not raw_paragraphs:
+        raw_paragraphs = [clean_text]
 
     chunks = []
     current_chunk = []
     current_len = 0
-    for p in paragraphs:
+    for p in raw_paragraphs:
         p_len = len(p.split())
-        if current_len + p_len > 600 and current_chunk:
+        # If single paragraph is very long, break it by sentences
+        if p_len > 300:
+            if current_chunk:
+                chunks.append("\n\n".join(current_chunk))
+                current_chunk = []
+                current_len = 0
+            sentences = re.split(r'(?<=[.?!])\s+', p)
+            sub_chunk = []
+            sub_len = 0
+            for s in sentences:
+                s_len = len(s.split())
+                if sub_len + s_len > 250 and sub_chunk:
+                    chunks.append(" ".join(sub_chunk))
+                    sub_chunk = [s]
+                    sub_len = s_len
+                else:
+                    sub_chunk.append(s)
+                    sub_len += s_len
+            if sub_chunk:
+                chunks.append(" ".join(sub_chunk))
+        elif current_len + p_len > 300 and current_chunk:
             chunks.append("\n\n".join(current_chunk))
             current_chunk = [p]
             current_len = p_len
@@ -223,14 +245,14 @@ def translate_text(text: str, target_language: str, source_language: str = "Auto
     translated_chunks = []
     for chunk in chunks:
         prompt = (
-            f"You are a professional polyglot translator and linguist. "
+            f"You are a professional polyglot translator. "
             f"Translate the following text faithfully and accurately from {source_clean} into {target_clean} ({target_language}).\n\n"
             f"TRANSLATION RULES:\n"
             f"1. Provide a natural, highly fluent, and culturally appropriate translation into {target_clean}.\n"
-            f"2. Maintain 100% of the original meaning, tone, nuances, proper nouns, citations, and technical terminology.\n"
-            f"3. Preserve all lists, bullets, formatting, and line breaks.\n"
-            f"4. Output ONLY the translated text in {target_clean}. Do NOT include notes, romanizations, or explanations.\n\n"
-            f"Source Text to Translate:\n{chunk.strip()}"
+            f"2. Maintain 100% of the original meaning, tone, proper nouns, citations, and terminology.\n"
+            f"3. Preserve all punctuation, lists, and structure.\n"
+            f"4. Output ONLY the translated text in {target_clean}. Do NOT include notes, comments, or romanizations.\n\n"
+            f"Text to Translate:\n{chunk.strip()}"
         )
 
         chunk_result = None
@@ -240,7 +262,7 @@ def translate_text(text: str, target_language: str, source_language: str = "Auto
                     model=model_name,
                     contents=prompt,
                     config={
-                        "temperature": 0.3,
+                        "temperature": 0.2,
                         "top_p": 0.95
                     }
                 )
@@ -253,8 +275,25 @@ def translate_text(text: str, target_language: str, source_language: str = "Auto
                     if cleaned:
                         chunk_result = cleaned
                         break
-            except Exception:
+            except Exception as e:
+                # Try next model
                 continue
+
+        # Secondary direct retry if model was too verbose or returned empty
+        if not chunk_result:
+            direct_prompt = f"Translate the following text into {target_clean}. Output ONLY the translated text without commentary:\n\n{chunk.strip()}"
+            for model_name in CANDIDATE_MODELS[:3]:
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=direct_prompt,
+                        config={"temperature": 0.2}
+                    )
+                    if response and response.text and response.text.strip():
+                        chunk_result = response.text.strip()
+                        break
+                except Exception:
+                    continue
 
         if not chunk_result:
             chunk_result = chunk

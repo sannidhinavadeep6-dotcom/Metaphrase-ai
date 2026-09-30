@@ -256,7 +256,22 @@ export default function TranslatorTool({ user, showToast }) {
               )}
             </div>
 
-            {outputText ? (
+            {loading ? (
+              <div className="py-16 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
+                  <Zap className="w-7 h-7 animate-spin text-blue-600" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-bold text-gray-900">Translating into {targetLang}...</p>
+                  <p className="text-xs text-gray-500">Neural linguistic engine is analyzing idioms and phrasing</p>
+                </div>
+                <div className="max-w-xs mx-auto space-y-2 pt-2">
+                  <div className="h-3 bg-blue-100 rounded-full animate-pulse w-full"></div>
+                  <div className="h-3 bg-blue-100 rounded-full animate-pulse w-5/6 mx-auto"></div>
+                  <div className="h-3 bg-blue-100 rounded-full animate-pulse w-2/3 mx-auto"></div>
+                </div>
+              </div>
+            ) : outputText ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 text-xs">
                   <span className="font-bold text-blue-950">Localized Output ({targetLang}):</span>
